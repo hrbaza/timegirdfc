@@ -173,7 +173,10 @@ TG.ui = (function () {
           <a href="#/" class="brand" aria-label="Time Grid FC home">
             <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC
           </a>
-          <div class="nav-links" id="tg-navlinks">${links}</div>
+          <div class="nav-links" id="tg-navlinks">
+            <button class="nav-mob-search" id="tg-nav-search" aria-label="Search">${I.search}<span>Search players, teams, news…</span></button>
+            ${links}
+          </div>
           <div class="nav-actions">
             <button class="icon-btn" id="tg-search-btn" aria-label="Search" title="Search (press /)">${I.search}</button>
             <button class="icon-btn" id="tg-theme-btn" aria-label="Toggle theme" title="Toggle theme">${theme === "dark" ? I.sun : I.moon}</button>
@@ -237,6 +240,8 @@ TG.ui = (function () {
     const links = document.getElementById("tg-navlinks");
     menuBtn.onclick = () => links.classList.toggle("open");
     links.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => links.classList.remove("open")));
+    const navSearch = document.getElementById("tg-nav-search");
+    if (navSearch) navSearch.onclick = () => { links.classList.remove("open"); openSearch(); };
   }
 
   function setActiveNav(route) {
