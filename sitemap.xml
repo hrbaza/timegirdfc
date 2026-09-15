@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Replace YOUR_DOMAIN with your live domain. Note: this site uses client-side
+     hash routing (#/...). For best crawlability/indexing, deploy with server-side
+     rendering or pre-rendering so each section returns real HTML. -->
+<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
+  <url><loc>https://YOUR_DOMAIN/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/news</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/players</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/teams</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/schedule</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/leagues</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/worldcup</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/awards</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/transfers</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/videos</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/about</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/contact</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://YOUR_DOMAIN/#/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

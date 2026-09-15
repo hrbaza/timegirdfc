@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Time Grid FC</title>
+  <meta name="description" content="Time Grid FC content management — admin panel." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23ffffff' stroke='%23111' stroke-width='3'/%3E%3Cpath d='M50 28l14 10-5 17H41l-5-17z' fill='%23111'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=2.2" />
+</head>
+<body data-app="admin">
+  <!-- Custom football cursor -->
+  <div id="tg-cursor" aria-hidden="true">
+    <svg viewBox="0 0 100 100" width="28" height="28">
+      <circle cx="50" cy="50" r="47" fill="#fff" stroke="#0f172a" stroke-width="4"/>
+      <path d="M50 22l17 12-6.5 20.5h-21L33 34z" fill="#0f172a"/>
+      <path d="M22 44l14 10-5 16-14-3z" fill="#0f172a" opacity=".85"/>
+      <path d="M78 44l-14 10 5 16 14-3z" fill="#0f172a" opacity=".85"/>
+      <path d="M38 78l6-15h12l6 15-12 6z" fill="#0f172a" opacity=".85"/>
+    </svg>
+  </div>
+
+  <div id="tg-progress" aria-hidden="true"></div>
+
+  <!-- Slim admin top bar (rendered by ui.js) -->
+  <header id="tg-header"></header>
+
+  <!-- Admin view -->
+  <main id="tg-app" tabindex="-1"></main>
+
+  <!-- Toast host -->
+  <div id="tg-toast" aria-live="polite"></div>
+
+  <script src="assets/js/seed.js?v=2.2"></script>
+  <script src="assets/js/api.js?v=2.2"></script>
+  <script src="assets/js/store.js?v=2.2"></script>
+  <script src="assets/js/ui.js?v=2.2"></script>
+  <script src="assets/js/pages.js?v=2.2"></script>
+  <script src="assets/js/admin.js?v=2.2"></script>
+  <script src="assets/js/app.js?v=2.2"></script>
+</body>
+</html>

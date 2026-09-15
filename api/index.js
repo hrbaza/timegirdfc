@@ -1,0 +1,28 @@
+/* Vercel serverless entry for the Time Grid FC API.
+   Runs the Express app (server/src/app.js) with a cached MongoDB connection so
+   warm invocations reuse the same connection. Only /api/* is routed here
+   (see vercel.json); the frontend is served as static files by Vercel.
+   Env vars to set in Vercel: MONGO_URI, JWT_SECRET (and optionally JWT_EXPIRES_IN). */
+require("dotenv").config();
+const mongoose = require("mongoose");
+const app = require("../server/src/app");
+const { connectDB } = require("../server/src/config/db");
+
+let connPromise = null;
+async function ensureDB() {
+  if (mongoose.connection.readyState === 1) return;          // already connected
+  if (!connPromise) connPromise = connectDB(process.env.MONGO_URI).catch((e) => { connPromise = null; throw e; });
+  await connPromise;
+}
+
+module.exports = async (req, res) => {
+  try {
+    await ensureDB();
+  } catch (e) {
+    // If the DB is unreachable, still let Express respond (it will 5xx on data
+    // routes). The frontend detects this via /api/health and falls back to its
+    // offline mode, so the site stays usable.
+    console.error("DB connection error:", e.message);
+  }
+  return app(req, res);
+};

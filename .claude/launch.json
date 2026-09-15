@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "TimeGridFC (full stack + MongoDB)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "server", "run", "dev:memory"],
+      "port": 4000
+    },
+    {
+      "name": "TimeGridFC (frontend only, offline)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8777", "--bind", "127.0.0.1"],
+      "port": 8777
+    }
+  ]
+}

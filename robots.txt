@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Allow Google's ad crawler explicitly
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+# Replace YOUR_DOMAIN with your live domain after deploying
+Sitemap: https://YOUR_DOMAIN/sitemap.xml
