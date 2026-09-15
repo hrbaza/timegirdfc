@@ -436,6 +436,9 @@ table.tg tr:last-child td{ border-bottom:none; }
   .nav-links a{ font-size:1rem; padding:.7rem .9rem; }
   .nav-links a.active::after{ display:none; }
   .hamburger{ display:grid; }
+  /* Push the actions to the far right so there is a gap after the brand name
+     (the nav links become a dropdown and leave the flex row on mobile). */
+  .nav-actions{ margin-left:auto; }
   /* Move search into the menu on mobile so the top bar has more space. */
   #tg-search-btn{ display:none; }
   .nav-mob-search{ display:flex; align-items:center; gap:.6rem; width:100%; padding:.7rem .9rem; margin-bottom:.35rem; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-soft); border-radius:10px; font:inherit; font-size:.95rem; cursor:pointer; text-align:left; }
