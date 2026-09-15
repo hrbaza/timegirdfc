@@ -10,7 +10,7 @@
    ========================================================================= */
 window.TG = window.TG || {};
 TG.store = (function () {
-  const DB_KEY = "tg_db_v1";
+  const DB_KEY = "tg_db_v2"; // bump to invalidate stale offline caches
   const USER_SESSION = "tg_user";       // local mode: user id
   const ADMIN_SESSION = "tg_admin";     // local mode: admin id
   const USER_TOKEN = "tg_token";        // api mode: visitor JWT
