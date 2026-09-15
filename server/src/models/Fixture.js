@@ -5,6 +5,7 @@ const { genId } = require("../utils/id");
 const fixtureSchema = new mongoose.Schema(
   {
     _id: { type: String, default: () => genId("f") },
+    dayOffset: { type: Number }, // days relative to "today"; lets the UI keep demo dates current
     home: { type: String, ref: "Team", required: true },
     away: { type: String, ref: "Team", required: true },
     date: { type: String, required: true }, // YYYY-MM-DD

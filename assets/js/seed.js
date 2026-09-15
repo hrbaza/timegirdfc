@@ -311,6 +311,7 @@ window.TG_SEED = (function () {
   // Fixtures — dates set relative to "today" at load time in store.js
   const fixtures = [
     { id:"f-1", home:"t-mancity", away:"t-arsenal", dayOffset:0, time:"17:30", venue:"Etihad Stadium", comp:"l-premier-league", status:"upcoming", hs:null, as:null },
+    { id:"f-2", home:"t-liverpool", away:"t-chelsea", dayOffset:0, time:"20:00", venue:"Anfield", comp:"l-premier-league", status:"live", hs:2, as:1 },
     { id:"f-3", home:"t-realmadrid", away:"t-barcelona", dayOffset:0, time:"21:00", venue:"Santiago Bernabéu", comp:"l-laliga", status:"upcoming", hs:null, as:null },
     { id:"f-4", home:"t-bayern", away:"t-dortmund", dayOffset:1, time:"18:30", venue:"Allianz Arena", comp:"l-bundesliga", status:"upcoming", hs:null, as:null },
     { id:"f-5", home:"t-inter", away:"t-milan", dayOffset:1, time:"20:45", venue:"San Siro", comp:"l-serie-a", status:"upcoming", hs:null, as:null },

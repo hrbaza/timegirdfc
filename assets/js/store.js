@@ -112,6 +112,7 @@ TG.store = (function () {
       const a = aidStored ? find("users", aidStored) : null;
       session.admin = a && (a.role === "Admin" || a.role === "Editor") ? a : null;
     }
+    normalizeFixtures(); // keep fixture dates relative to today (both modes)
     return db;
   }
 
@@ -187,10 +188,21 @@ TG.store = (function () {
   }
 
   const todayStr = () => localDate(new Date());
-  function fixturesToday() { return all("fixtures").filter((f) => f.date === todayStr()); }
+  // Keep demo fixture dates current: recompute date = today + dayOffset on every load.
+  function normalizeFixtures() {
+    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+    (db.fixtures || []).forEach((f) => {
+      if (typeof f.dayOffset === "number") f.date = localDate(new Date(midnight.getTime() + f.dayOffset * 86400000));
+    });
+  }
+  function fixturesToday() {
+    const t = todayStr();
+    return all("fixtures").filter((f) => f.date === t || f.status === "live");
+  }
   function fixturesUpcoming() {
     const t = todayStr();
-    return all("fixtures").filter((f) => f.date >= t && f.status !== "finished")
+    // Live matches always show, regardless of date.
+    return all("fixtures").filter((f) => (f.date >= t || f.status === "live") && f.status !== "finished")
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   }
   function fixturesRecent() {

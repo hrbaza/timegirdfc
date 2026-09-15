@@ -57,10 +57,10 @@ async function seedDatabase() {
 
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
-  const fixtures = S.fixtures.map(({ id, dayOffset, ...rest }) => ({
+  const fixtures = S.fixtures.map(({ id, ...rest }) => ({
     _id: id,
-    ...rest,
-    date: localDate(new Date(midnight.getTime() + dayOffset * 86400000)),
+    ...rest, // keeps dayOffset so the UI can recompute dates relative to today
+    date: localDate(new Date(midnight.getTime() + (rest.dayOffset || 0) * 86400000)),
   }));
   const countries = S.countries.map((c) => ({ _id: c.code, code: c.code, name: c.name, flag: c.flag }));
 
