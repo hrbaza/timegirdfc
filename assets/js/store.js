@@ -73,18 +73,16 @@ TG.store = (function () {
   /* ================= INIT ================= */
   async function init() {
     db = emptyDB();
-    let apiUp = false;
-    // Longer timeout tolerates serverless cold starts (e.g. Vercel functions).
-    try { apiUp = TG.api && (await TG.api.health(4000)); } catch (e) { apiUp = false; }
+    // Single request (with a timeout) instead of a separate health probe + bootstrap.
+    // That saves a whole round-trip, which matters most on serverless cold starts.
+    let boot = null;
+    try { boot = TG.api && (await TG.api.request("/bootstrap", { timeout: 4500 })); } catch (e) { boot = null; }
 
-    if (apiUp) {
+    if (boot && boot.data) {
       MODE = "api";
-      try {
-        const boot = await TG.api.request("/bootstrap");
-        Object.assign(db, boot.data);
-        db.users = db.users || [];
-        db.comments = db.comments || [];
-      } catch (e) { console.warn("Bootstrap failed, falling back to local:", e); MODE = "local"; loadLocal(); return db; }
+      Object.assign(db, boot.data);
+      db.users = db.users || [];
+      db.comments = db.comments || [];
 
       userToken = lsGet(USER_TOKEN);
       adminToken = lsGet(ADMIN_TOKEN);

@@ -12,22 +12,27 @@ TG.api = (function () {
   const sameOrigin = location.origin && location.origin.startsWith("http") ? location.origin + "/api" : null;
   const base = configured || sameOrigin || "http://127.0.0.1:4000/api";
 
-  async function request(path, { method = "GET", body, token } = {}) {
+  async function request(path, { method = "GET", body, token, timeout } = {}) {
     const headers = {};
     if (body !== undefined) headers["Content-Type"] = "application/json";
     if (token) headers["Authorization"] = "Bearer " + token;
-    const res = await fetch(base + path, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    let data = null;
-    try { data = await res.json(); } catch (e) { /* 204 or non-json */ }
-    if (!res.ok) {
-      const msg = (data && data.message) || `Request failed (${res.status})`;
-      const err = new Error(msg); err.status = res.status; throw err;
-    }
-    return data;
+    let ctrl, timer;
+    if (timeout) { ctrl = new AbortController(); timer = setTimeout(() => ctrl.abort(), timeout); }
+    try {
+      const res = await fetch(base + path, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: ctrl ? ctrl.signal : undefined,
+      });
+      let data = null;
+      try { data = await res.json(); } catch (e) { /* 204 or non-json */ }
+      if (!res.ok) {
+        const msg = (data && data.message) || `Request failed (${res.status})`;
+        const err = new Error(msg); err.status = res.status; throw err;
+      }
+      return data;
+    } finally { if (timer) clearTimeout(timer); }
   }
 
   // Quick reachability probe with a short timeout.
