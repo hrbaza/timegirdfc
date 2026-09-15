@@ -9,6 +9,7 @@ const Fixture = require("../models/Fixture");
 const Transfer = require("../models/Transfer");
 const Video = require("../models/Video");
 const Comment = require("../models/Comment");
+const mongoose = require("mongoose");
 const { catchAsync } = require("../utils/AppError");
 
 // GET /api/search?q=  (FR-12: grouped global search)
@@ -49,6 +50,12 @@ const bootstrap = catchAsync(async (req, res) => {
 });
 
 // GET /api/health
-const health = (req, res) => res.json({ status: "success", message: "Time Grid FC API is running", time: new Date().toISOString() });
+const health = (req, res) => res.json({
+  status: "success",
+  message: "Time Grid FC API is running",
+  time: new Date().toISOString(),
+  hasMongoUri: !!process.env.MONGO_URI,          // is the env var present?
+  dbState: mongoose.connection.readyState,        // 0=disconnected 1=connected 2=connecting 3=disconnecting
+});
 
 module.exports = { search, bootstrap, health };
