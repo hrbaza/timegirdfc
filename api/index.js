@@ -13,17 +13,14 @@ async function ensureDB() {
   if (mongoose.connection.readyState === 1) return;          // already connected
   if (!connPromise) connPromise = connectDB(process.env.MONGO_URI).catch((e) => { connPromise = null; throw e; });
   await connPromise;
-  global.__dbError = null;
 }
 
 module.exports = async (req, res) => {
   try {
     await ensureDB();
   } catch (e) {
-    // If the DB is unreachable, still let Express respond (it will 5xx on data
-    // routes). The frontend detects this via /api/health and falls back to its
-    // offline mode, so the site stays usable. Record the reason for diagnostics.
-    global.__dbError = e.message;
+    // If the DB is unreachable, still let Express respond (data routes will 5xx).
+    // The frontend detects this and falls back to offline mode, so the site stays usable.
     console.error("DB connection error:", e.message);
   }
   return app(req, res);
