@@ -56,6 +56,7 @@ const health = (req, res) => res.json({
   time: new Date().toISOString(),
   hasMongoUri: !!process.env.MONGO_URI,          // is the env var present?
   dbState: mongoose.connection.readyState,        // 0=disconnected 1=connected 2=connecting 3=disconnecting
+  dbError: global.__dbError || null,              // last connection error (no secrets)
 });
 
 module.exports = { search, bootstrap, health };
