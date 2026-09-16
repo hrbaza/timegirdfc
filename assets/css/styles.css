@@ -137,7 +137,11 @@ p { margin:0 0 1em; }
   padding:.7rem 1.1rem; border-radius:999px; font-weight:700; font-size:.95rem; cursor:pointer;
   border:1px solid transparent; background:var(--b); color:#04140b; transition:.2s var(--ease); white-space:nowrap;
 }
-:root[data-theme="light"] .btn{ color:#fff; }
+:root[data-theme="light"] .btn{ color:#fff; } /* filled primary: white text on green */
+/* Light mode: ghost (transparent) buttons use green text so they stay visible;
+   gold buttons keep dark text. (The blanket rule above must not force white.) */
+:root[data-theme="light"] .btn.ghost{ color:var(--primary); }
+:root[data-theme="light"] .btn.gold{ color:#241a02; }
 .btn:hover{ transform:translateY(-2px); box-shadow:0 10px 24px color-mix(in srgb,var(--b) 40%,transparent); }
 .btn:active{ transform:translateY(0) scale(.98); }
 .btn.ghost{ background:transparent; color:var(--text); border-color:var(--border-strong); }
