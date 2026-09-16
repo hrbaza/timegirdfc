@@ -143,6 +143,12 @@ TG.store = (function () {
     db[col].unshift(obj); persistLocal(); return obj;
   }
   async function update(col, id, patch) {
+    // User password change: local mode hashes to `pass`; API mode sends the
+    // plaintext for the server to hash (see userController.updateUser).
+    if (col === "users" && patch && patch.password) {
+      patch = { ...patch };
+      if (MODE === "local") { patch.pass = hash(patch.password); delete patch.password; }
+    }
     if (MODE === "api") {
       const res = await TG.api.request("/" + col + "/" + id, { method: "PUT", body: patch, token: adminToken });
       const i = db[col].findIndex((x) => x.id === id);

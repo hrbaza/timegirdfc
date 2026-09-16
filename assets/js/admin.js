@@ -390,9 +390,14 @@ TG.admin = (function () {
     const sc = SCHEMAS[key];
     const isEdit = !!row;
     const editing = isEdit ? row : sc.def();
-    // Users: add a password field only when creating
+    // Users: password field — required on create, optional on edit (blank = keep).
     let fields = sc.fields.slice();
-    if (key === "users" && !isEdit) fields.push({ n: "_password", l: "Password", t: "text", req: true, help: "Min 6 characters." });
+    if (key === "users") fields.push({
+      n: "_password",
+      l: isEdit ? "New password (leave blank to keep current)" : "Password",
+      t: "text", req: !isEdit,
+      help: isEdit ? "Only fill this to change the password (min 6 characters)." : "Min 6 characters.",
+    });
 
     const back = document.createElement("div");
     back.className = "modal-back";
@@ -433,13 +438,15 @@ TG.admin = (function () {
 
       // Users: pass the plaintext password as `password`; the store hashes (local)
       // or the API hashes server-side (bcrypt). Never send a client-side hash.
-      if (key === "users" && !isEdit) {
+      if (key === "users") {
         out.email = (out.email || "").trim().toLowerCase();
-        if (!out._password || out._password.length < 6) { U.toast("Password must be at least 6 characters", "err"); return; }
-        out.password = out._password;
-        delete out._password;
-      } else if (key === "users") {
-        out.email = (out.email || "").trim().toLowerCase();
+        if (!isEdit) {
+          if (!out._password || out._password.length < 6) { U.toast("Password must be at least 6 characters", "err"); return; }
+          out.password = out._password;
+        } else if (out._password) {
+          if (out._password.length < 6) { U.toast("Password must be at least 6 characters", "err"); return; }
+          out.password = out._password; // change password on edit
+        }
         delete out._password;
       }
 
