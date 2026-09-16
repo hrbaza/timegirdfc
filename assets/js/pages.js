@@ -844,7 +844,6 @@ TG.pages = (function () {
         </form>
         <div class="divider">or</div>
         <p class="center" style="margin:0">New here? <a href="#/signup" style="color:var(--primary);font-weight:700">Create an account</a></p>
-        <p class="help center" style="margin-top:1rem">Demo account: <b>fan@example.com</b> / <b>password</b></p>
       </div></section>`;
     document.getElementById("siform").onsubmit = async (e) => {
       e.preventDefault();

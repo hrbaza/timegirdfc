@@ -264,7 +264,6 @@ TG.admin = (function () {
           <div class="field"><label>Password</label><input class="input" type="password" id="al-pass" required></div>
           <button class="btn block" type="submit">Sign in to Admin</button>
         </form>
-        <p class="help center" style="margin-top:1rem">Admin: <b>admin@timegridfc.com</b> / <b>admin123</b><br>Editor: <b>editor@timegridfc.com</b> / <b>editor123</b></p>
       </div></section>`;
     document.getElementById("alform").onsubmit = async (e) => {
       e.preventDefault();
