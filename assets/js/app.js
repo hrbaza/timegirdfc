@@ -87,12 +87,16 @@
       U.initScroll();
       U.renderAdminHeader();
       window.addEventListener("hashchange", routeAdmin);
+      // If live data arrives after a cold start, re-render with it.
+      S.setOnHydrate(() => { U.renderAdminHeader(); routeAdmin(); });
       routeAdmin();
     } else {
       U.renderHeader();
       U.renderFooter();
       U.init(); // cursor + scroll + search + key shortcuts
       window.addEventListener("hashchange", routePublic);
+      // If live data arrives after a cold start, re-render header/footer + page.
+      S.setOnHydrate(() => { U.renderHeader(); U.renderFooter(); routePublic(); });
       if (!location.hash) location.replace("#/");
       routePublic();
     }

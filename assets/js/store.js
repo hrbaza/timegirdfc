@@ -71,48 +71,76 @@ TG.store = (function () {
   function persistLocal() { if (MODE === "local") lsSet(DB_KEY, JSON.stringify(db)); }
 
   /* ================= INIT ================= */
+  let onHydrate = null, hydrated = false;
+  function setOnHydrate(fn) { onHydrate = fn; }
+
+  // Populate the cache + sessions from a /bootstrap response (API mode).
+  async function applyApiBoot(boot) {
+    MODE = "api";
+    Object.assign(db, boot.data);
+    db.users = db.users || [];
+    db.comments = db.comments || [];
+    userToken = lsGet(USER_TOKEN);
+    adminToken = lsGet(ADMIN_TOKEN);
+    try { session.user = userToken ? JSON.parse(lsGet(USER_OBJ) || "null") : null; } catch (e) { session.user = null; }
+    try { session.admin = adminToken ? JSON.parse(lsGet(ADMIN_OBJ) || "null") : null; } catch (e) { session.admin = null; }
+    if (userToken) {
+      try { const me = await TG.api.request("/auth/me", { token: userToken }); session.user = me.data; lsSet(USER_OBJ, JSON.stringify(me.data)); }
+      catch (e) { clearUserSession(); }
+    }
+    if (adminToken) {
+      try {
+        const me = await TG.api.request("/auth/me", { token: adminToken });
+        if (me.data && (me.data.role === "Admin" || me.data.role === "Editor")) {
+          session.admin = me.data; lsSet(ADMIN_OBJ, JSON.stringify(me.data));
+          await refreshAdminData();
+        } else clearAdminSession();
+      } catch (e) { clearAdminSession(); }
+    }
+    normalizeFixtures();
+  }
+
+  function loadLocalMode() {
+    MODE = "local";
+    loadLocal();
+    const uidStored = lsGet(USER_SESSION);
+    const aidStored = lsGet(ADMIN_SESSION);
+    session.user = uidStored ? find("users", uidStored) : null;
+    const a = aidStored ? find("users", aidStored) : null;
+    session.admin = a && (a.role === "Admin" || a.role === "Editor") ? a : null;
+    normalizeFixtures();
+  }
+
+  // If the first (quick) bootstrap missed (e.g. serverless cold start), keep trying
+  // in the background and switch to live API data + re-render when it arrives.
+  function hydrateFromApiSoon() {
+    if (hydrated || !TG.api) return;
+    (async () => {
+      try {
+        const boot = await TG.api.request("/bootstrap", { timeout: 15000 });
+        if (boot && boot.data) {
+          hydrated = true;
+          await applyApiBoot(boot);
+          if (typeof onHydrate === "function") { try { onHydrate(); } catch (e) {} }
+        }
+      } catch (e) { /* stay in offline mode */ }
+    })();
+  }
+
   async function init() {
     db = emptyDB();
-    // Single request (with a timeout) instead of a separate health probe + bootstrap.
-    // That saves a whole round-trip, which matters most on serverless cold starts.
+    // Quick attempt: if the API answers fast, use live data immediately.
     let boot = null;
-    try { boot = TG.api && (await TG.api.request("/bootstrap", { timeout: 4500 })); } catch (e) { boot = null; }
-
+    try { boot = TG.api && (await TG.api.request("/bootstrap", { timeout: 3500 })); } catch (e) { boot = null; }
     if (boot && boot.data) {
-      MODE = "api";
-      Object.assign(db, boot.data);
-      db.users = db.users || [];
-      db.comments = db.comments || [];
-
-      userToken = lsGet(USER_TOKEN);
-      adminToken = lsGet(ADMIN_TOKEN);
-      // restore cached session objects immediately (sync), validate in background
-      try { session.user = userToken ? JSON.parse(lsGet(USER_OBJ) || "null") : null; } catch (e) { session.user = null; }
-      try { session.admin = adminToken ? JSON.parse(lsGet(ADMIN_OBJ) || "null") : null; } catch (e) { session.admin = null; }
-
-      if (userToken) {
-        try { const me = await TG.api.request("/auth/me", { token: userToken }); session.user = me.data; lsSet(USER_OBJ, JSON.stringify(me.data)); }
-        catch (e) { clearUserSession(); }
-      }
-      if (adminToken) {
-        try {
-          const me = await TG.api.request("/auth/me", { token: adminToken });
-          if (me.data && (me.data.role === "Admin" || me.data.role === "Editor")) {
-            session.admin = me.data; lsSet(ADMIN_OBJ, JSON.stringify(me.data));
-            await refreshAdminData();
-          } else clearAdminSession();
-        } catch (e) { clearAdminSession(); }
-      }
+      hydrated = true;
+      await applyApiBoot(boot);
     } else {
-      MODE = "local";
-      loadLocal();
-      const uidStored = lsGet(USER_SESSION);
-      const aidStored = lsGet(ADMIN_SESSION);
-      session.user = uidStored ? find("users", uidStored) : null;
-      const a = aidStored ? find("users", aidStored) : null;
-      session.admin = a && (a.role === "Admin" || a.role === "Editor") ? a : null;
+      // Render instantly from the offline seed, then hydrate from the API in the
+      // background and re-render when it arrives (covers cold starts).
+      loadLocalMode();
+      hydrateFromApiSoon();
     }
-    normalizeFixtures(); // keep fixture dates relative to today (both modes)
     return db;
   }
 
@@ -332,7 +360,7 @@ TG.store = (function () {
   }
 
   return {
-    init, all, find, add, update, remove, resetAll, uid, localDate,
+    init, all, find, add, update, remove, resetAll, uid, localDate, setOnHydrate,
     mode: () => MODE, isApi: () => MODE === "api",
     team, player, league, award, country, news1,
     playersByCountry, squad, countriesWithPlayers, awardsForPlayer,
