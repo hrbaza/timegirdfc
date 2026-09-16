@@ -378,7 +378,7 @@ TG.admin = (function () {
     } else if (f.t === "image") {
       control = `<input class="input" id="${id}" placeholder="Image URL (or upload →)" value="${esc(val)}">
         <input type="file" accept="image/*" id="${id}-file" style="margin-top:.4rem;font-size:.82rem">
-        <div class="help">Paste a URL, or upload an image (stored inline for this demo).</div>`;
+        <div class="help">Paste an image URL, or upload a file — it's auto-resized &amp; optimised.</div>`;
     } else {
       const type = f.t === "number" ? "number" : f.t === "date" ? "date" : f.t === "time" ? "time" : f.t === "datetime" ? "datetime-local" : "text";
       control = `<input class="input" id="${id}" type="${type}" value="${esc(val)}" ${f.req ? "required" : ""}>`;
@@ -410,13 +410,33 @@ TG.admin = (function () {
     back.querySelector("#m-cancel").onclick = close;
     back.onclick = (e) => { if (e.target === back) close(); };
 
-    // wire image file inputs → dataURL into the URL input
+    // wire image file inputs → auto-resize/compress → dataURL into the URL input
     fields.filter((f) => f.t === "image").forEach((f) => {
       const file = back.querySelector("#fld-" + f.n + "-file");
       if (file) file.onchange = () => {
         const fl = file.files[0]; if (!fl) return;
-        if (fl.size > 1.5 * 1024 * 1024) { U.toast("Image too large (max 1.5MB for demo)", "err"); return; }
-        const rd = new FileReader(); rd.onload = () => { back.querySelector("#fld-" + f.n).value = rd.result; U.toast("Image attached", "ok"); }; rd.readAsDataURL(fl);
+        if (!/^image\//.test(fl.type)) { U.toast("Please choose an image file", "err"); return; }
+        if (fl.size > 20 * 1024 * 1024) { U.toast("Image too large (max 20MB)", "err"); return; }
+        const target = back.querySelector("#fld-" + f.n);
+        const rawFallback = () => { const rd = new FileReader(); rd.onload = () => { target.value = rd.result; U.toast("Image added", "ok"); }; rd.readAsDataURL(fl); };
+        const objUrl = URL.createObjectURL(fl);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(objUrl);
+          try {
+            const MAX = 1600; // downscale so large photos don't bloat the database
+            let w = img.naturalWidth, h = img.naturalHeight;
+            if (w > MAX || h > MAX) { const s = Math.min(MAX / w, MAX / h); w = Math.round(w * s); h = Math.round(h * s); }
+            const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+            const out = canvas.toDataURL("image/jpeg", 0.82);
+            if (!out || out.length < 30) return rawFallback();
+            target.value = out;
+            U.toast("Image added & optimised", "ok");
+          } catch (e) { rawFallback(); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(objUrl); rawFallback(); };
+        img.src = objUrl;
       };
     });
 
