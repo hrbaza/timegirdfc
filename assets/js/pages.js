@@ -90,7 +90,9 @@ TG.pages = (function () {
   function home(app) {
     U.setMeta("", "Football news, stats & community — the official companion to the Time Grid FC YouTube channel.");
     const feat = S.publishedNews()[0];
-    const latest = S.publishedNews().slice(1, 7);
+    // Latest News shows the most recent posts (including the newest), so a freshly
+    // published blog appears here immediately.
+    const latest = S.publishedNews().slice(0, 6);
     const today = S.fixturesToday();
     const transfers = S.all("transfers").slice(0, 5);
     const vids = S.all("videos").slice(0, 3);
