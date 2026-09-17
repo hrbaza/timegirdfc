@@ -325,32 +325,58 @@ TG.admin = (function () {
     };
   }
 
-  /* ---- generic module table ---- */
+  /* ---- generic module table (users are grouped by role) ---- */
+  const USER_GROUPS = [
+    ["Admin", "🛡️ Admins", "Full access — content and user management"],
+    ["Editor", "✍️ Editors", "Content management only (no user access)"],
+    ["Visitor", "👤 Visitors", "Registered users who can post comments"],
+  ];
   function moduleTable(main, key) {
     const sc = SCHEMAS[key];
+    const grouped = key === "users";
     let q = "";
     main.innerHTML = `
       <div class="admin-top"><div><h1 style="margin:0">${sc.icon} ${sc.title}</h1><p class="muted" style="margin:0">${S.all(sc.col).length} record(s)</p></div>
         <button class="btn" id="add-btn">${icon("plus")} Add ${sc.title.replace(/s$/, "").replace(/ & .*/, "")}</button></div>
       <div class="data-toolbar"><div class="search-box" style="max-width:340px"><span>${icon("search")}</span><input class="input" id="tbl-search" placeholder="Search ${sc.title.toLowerCase()}…"></div></div>
-      <div class="table-wrap"><table class="tg"><thead><tr>${sc.columns.map((c) => `<th>${c.h}</th>`).join("")}<th style="text-align:right">Actions</th></tr></thead><tbody id="tbl-body"></tbody></table></div>`;
-    function draw() {
-      let rows = S.all(sc.col);
-      if (q) { const ql = q.toLowerCase(); rows = rows.filter((r) => JSON.stringify(r).toLowerCase().includes(ql)); }
-      const body = document.getElementById("tbl-body");
-      body.innerHTML = rows.length ? rows.map((r) => `<tr>${sc.columns.map((c) => `<td>${c.get(r)}</td>`).join("")}
-        <td><div class="row-actions" style="justify-content:flex-end">
-          <button class="icn-btn" data-edit="${r.id}" title="Edit">${icon("edit")}</button>
-          <button class="icn-btn del" data-del="${r.id}" title="Delete">${icon("trash")}</button>
-        </div></td></tr>`).join("") : `<tr><td colspan="${sc.columns.length + 1}"><div class="empty" style="padding:2rem">No records. Click “Add”.</div></td></tr>`;
-      body.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => openForm(key, S.find(sc.col, b.dataset.edit)));
-      body.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+      ${grouped
+        ? `<div id="tbl-groups"></div>`
+        : `<div class="table-wrap"><table class="tg"><thead><tr>${sc.columns.map((c) => `<th>${c.h}</th>`).join("")}<th style="text-align:right">Actions</th></tr></thead><tbody id="tbl-body"></tbody></table></div>`}`;
+
+    const rowHtml = (r) => `<tr>${sc.columns.map((c) => `<td>${c.get(r)}</td>`).join("")}
+      <td><div class="row-actions" style="justify-content:flex-end">
+        <button class="icn-btn" data-edit="${r.id}" title="Edit">${icon("edit")}</button>
+        <button class="icn-btn del" data-del="${r.id}" title="Delete">${icon("trash")}</button>
+      </div></td></tr>`;
+    const tableHtml = (rows, emptyMsg) => `<div class="table-wrap"><table class="tg"><thead><tr>${sc.columns.map((c) => `<th>${c.h}</th>`).join("")}<th style="text-align:right">Actions</th></tr></thead><tbody>${
+      rows.length ? rows.map(rowHtml).join("") : `<tr><td colspan="${sc.columns.length + 1}"><div class="empty" style="padding:1.4rem">${emptyMsg || "No records."}</div></td></tr>`
+    }</tbody></table></div>`;
+
+    function wire() {
+      main.querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => openForm(key, S.find(sc.col, b.dataset.edit)));
+      main.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
         const row = S.find(sc.col, b.dataset.del);
         if (confirm("Delete this record permanently?")) {
           try { await S.remove(sc.col, row.id); U.toast("Deleted", "ok"); draw(); }
           catch (e) { U.toast(e.message, "err"); }
         }
       });
+    }
+    function draw() {
+      let rows = S.all(sc.col);
+      if (q) { const ql = q.toLowerCase(); rows = rows.filter((r) => JSON.stringify(r).toLowerCase().includes(ql)); }
+      if (grouped) {
+        document.getElementById("tbl-groups").innerHTML = USER_GROUPS.map(([role, label, desc]) => {
+          const rs = rows.filter((r) => r.role === role);
+          return `<div class="section" style="padding:.4rem 0 0"><div class="section-head" style="margin-bottom:.6rem"><div>
+            <h2 style="font-size:1.1rem;margin:0">${label} <span class="muted" style="font-weight:400">(${rs.length})</span></h2>
+            <p class="muted" style="margin:.1rem 0 0;font-size:.82rem">${desc}</p></div></div>${tableHtml(rs, "No " + role.toLowerCase() + " accounts.")}</div>`;
+        }).join("");
+      } else {
+        const body = document.getElementById("tbl-body");
+        body.innerHTML = rows.length ? rows.map(rowHtml).join("") : `<tr><td colspan="${sc.columns.length + 1}"><div class="empty" style="padding:2rem">No records. Click “Add”.</div></td></tr>`;
+      }
+      wire();
     }
     document.getElementById("add-btn").onclick = () => openForm(key, null);
     document.getElementById("tbl-search").addEventListener("input", (e) => { q = e.target.value; draw(); });
