@@ -231,6 +231,28 @@ TG.pages = (function () {
           heads.map((h, i) => `<li><a href="#sec-${i + 1}" onclick="event.preventDefault();var e=document.getElementById('sec-${i + 1}');if(e)e.scrollIntoView({behavior:'smooth'})">${esc(h.textContent)}</a></li>`).join("") +
           `</ol></nav>`;
       }
+
+      // Insert up to two in-article images, spread through the body.
+      const inImgs = [];
+      if (n.bodyImage1) inImgs.push({ src: n.bodyImage1, cap: n.bodyImage1Caption });
+      if (n.bodyImage2) inImgs.push({ src: n.bodyImage2, cap: n.bodyImage2Caption });
+      const blocks = [...tmp.children];
+      if (inImgs.length && blocks.length) {
+        const denom = inImgs.length + 1;
+        const makeFig = (im) => {
+          const fig = document.createElement("figure");
+          fig.className = "in-body";
+          fig.innerHTML = `<img src="${esc(im.src)}" alt="${esc(im.cap || n.title)}" loading="lazy">` +
+            (im.cap ? `<figcaption class="muted">${esc(im.cap)}</figcaption>` : "");
+          return fig;
+        };
+        // Insert from the last position first so earlier block references stay valid.
+        inImgs
+          .map((im, i) => ({ im, pos: Math.min(blocks.length, Math.max(1, Math.round((blocks.length * (i + 1)) / denom))) }))
+          .sort((a, b) => b.pos - a.pos)
+          .forEach(({ im, pos }) => { tmp.insertBefore(makeFig(im), blocks[pos] || null); });
+      }
+
       bodyHtml = tmp.innerHTML;
     } catch (e) { /* keep raw body */ }
 
