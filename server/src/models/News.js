@@ -26,6 +26,10 @@ const newsSchema = new mongoose.Schema(
       default: "General Football News",
     },
     cover: { type: String, default: "" },
+    bodyImage1: { type: String, default: "" },         // first in-article image (≈ 1/3 down)
+    bodyImage1Caption: { type: String, default: "" },
+    bodyImage2: { type: String, default: "" },         // second in-article image (≈ 2/3 down)
+    bodyImage2Caption: { type: String, default: "" },
     author: { type: String, default: "Time Grid FC" },
     tags: { type: [String], default: [] },
     excerpt: { type: String, default: "" },
