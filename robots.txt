@@ -3,10 +3,15 @@
 # awards, transfers and videos.
 # Optimised for search engines (Google, Bing) and AI answer engines
 # (ChatGPT, Claude, Perplexity, Gemini).
+# AI answer engines: structured content is available at
+#   https://www.timegridfc.com/llms.txt       (index)
+#   https://www.timegridfc.com/llms-full.txt   (full text)
 
 # ----- All crawlers: index the whole public site -----
 User-agent: *
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 # Keep private / functional routes out of search results
 Disallow: /admin

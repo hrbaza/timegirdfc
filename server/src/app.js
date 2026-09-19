@@ -52,6 +52,19 @@ if (clientDirEnv) {
     res.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
     res.send(xml);
   });
+  // llms.txt / llms-full.txt — structured content for AI answer engines.
+  app.get(["/llms.txt", "/llms-full.txt"], async (req, res) => {
+    try {
+      const llms = require("./llms");
+      const txt = req.path === "/llms-full.txt" ? await llms.buildLlmsFull() : await llms.buildLlms();
+      res.set("Content-Type", "text/plain; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+      res.send(txt);
+    } catch (e) {
+      console.error("llms error:", e.message);
+      res.status(500).type("text/plain").send("# Time Grid FC\n");
+    }
+  });
   // Other SEO / AdSense files served from the site root.
   app.get(["/robots.txt", "/ads.txt"], (req, res) => res.sendFile(path.join(clientDir, req.path.slice(1))));
   // Admin panel lives on its own protected URL.
