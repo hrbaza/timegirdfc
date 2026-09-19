@@ -1,12 +1,54 @@
+# robots.txt — Time Grid FC (https://timegridfc.com)
+# Football news, match analysis, player & club database, leagues, World Cup,
+# awards, transfers and videos.
+# Optimised for search engines (Google, Bing) and AI answer engines
+# (ChatGPT, Claude, Perplexity, Gemini).
+
+# ----- All crawlers: index the whole public site -----
 User-agent: *
 Allow: /
 
-# Allow Google's ad crawler explicitly
+# Keep private / functional routes out of search results
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /*?*token=
+Disallow: /*?*auth=
+
+# ----- Google AdSense crawlers (needed for ad serving) -----
 User-agent: Mediapartners-Google
 Allow: /
 
 User-agent: AdsBot-Google
 Allow: /
 
-# Replace YOUR_DOMAIN with your live domain after deploying
-Sitemap: https://YOUR_DOMAIN/sitemap.xml
+User-agent: AdsBot-Google-Mobile
+Allow: /
+
+# ----- AI research / answer-engine crawlers -----
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Sitemap
+Sitemap: https://timegridfc.com/sitemap.xml
