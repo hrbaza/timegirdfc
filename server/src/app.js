@@ -46,7 +46,35 @@ if (clientDirEnv) {
   app.get(["/robots.txt", "/sitemap.xml", "/ads.txt"], (req, res) => res.sendFile(path.join(clientDir, req.path.slice(1))));
   // Admin panel lives on its own protected URL.
   app.get(["/admin", "/admin.html"], (req, res) => res.sendFile(path.join(clientDir, "admin.html")));
-  app.get("*", (req, res) => res.sendFile(path.join(clientDir, "index.html")));
+  // Every other route → server-render the page's <head> meta (+ article content)
+  // for SEO, then the client SPA hydrates. Falls back to the raw shell on error.
+  const { renderPage } = require("./ssr");
+  app.get("*", async (req, res) => {
+    try {
+      const html = await renderPage(req, clientDir);
+      res.set("Content-Type", "text/html; charset=utf-8");
+      // Let Vercel's CDN cache the rendered HTML briefly (fast + still fresh).
+      res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+      res.send(html);
+    } catch (e) {
+      console.error("SSR error:", e.message);
+      // Last-resort: serve the shell so the SPA still boots (client renders all).
+      res.set("Content-Type", "text/html; charset=utf-8");
+      res.send(
+        '<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>Time Grid FC — Football News, Stats & Community</title>' +
+        '<link rel="stylesheet" href="/assets/css/styles.css"></head><body>' +
+        '<header id="tg-header"></header>' +
+        '<div id="tg-search-overlay" class="search-overlay" hidden></div>' +
+        '<main id="tg-app" tabindex="-1"></main><footer id="tg-footer"></footer>' +
+        '<div id="tg-toast" aria-live="polite"></div>' +
+        ["seed", "api", "store", "ui", "pages", "admin", "app"]
+          .map((f) => `<script src="/assets/js/${f}.js"></script>`).join("") +
+        "</body></html>"
+      );
+    }
+  });
 } else {
   app.get("/", (req, res) => res.json({ status: "success", message: "Time Grid FC API. See /api/health" }));
   app.use(notFound);

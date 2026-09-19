@@ -21,6 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/styles.css?v=3.8" />
+  <!--SSR_HEAD-->
 </head>
 <body>
   <!-- Custom football cursor -->
@@ -43,8 +44,8 @@
   <!-- Search overlay (injected) -->
   <div id="tg-search-overlay" class="search-overlay" hidden></div>
 
-  <!-- Main app view -->
-  <main id="tg-app" tabindex="-1"></main>
+  <!-- Main app view (server-rendered content injected at SSR_CONTENT for crawlers) -->
+  <main id="tg-app" tabindex="-1"><!--SSR_CONTENT--></main>
 
   <!-- Footer (injected) -->
   <footer id="tg-footer"></footer>

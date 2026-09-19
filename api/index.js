@@ -4,6 +4,10 @@
    (see vercel.json); the frontend is served as static files by Vercel.
    Env vars to set in Vercel: MONGO_URI, JWT_SECRET (and optionally JWT_EXPIRES_IN). */
 require("dotenv").config();
+// Serve the frontend (with SSR) from the same function so page requests get
+// per-page meta + prerendered article HTML. Assets/robots/sitemap stay static
+// (see vercel.json). CLIENT_DIR="../.." resolves to the repo root from server/src.
+if (process.env.CLIENT_DIR === undefined) process.env.CLIENT_DIR = "..";
 const mongoose = require("mongoose");
 const app = require("../server/src/app");
 const { connectDB } = require("../server/src/config/db");
