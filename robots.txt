@@ -1,4 +1,4 @@
-# robots.txt — Time Grid FC (https://timegridfc.com)
+# robots.txt — Time Grid FC (https://www.timegridfc.com)
 # Football news, match analysis, player & club database, leagues, World Cup,
 # awards, transfers and videos.
 # Optimised for search engines (Google, Bing) and AI answer engines
@@ -51,4 +51,4 @@ User-agent: Applebot
 Allow: /
 
 # Sitemap
-Sitemap: https://timegridfc.com/sitemap.xml
+Sitemap: https://www.timegridfc.com/sitemap.xml

@@ -3,18 +3,18 @@
      Search engines treat #fragments as the same page, so the homepage is the
      primary indexable URL; the section links are listed for discovery. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://timegridfc.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://timegridfc.com/#/news</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://timegridfc.com/#/players</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://timegridfc.com/#/teams</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://timegridfc.com/#/schedule</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://timegridfc.com/#/leagues</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://timegridfc.com/#/worldcup</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://timegridfc.com/#/awards</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://timegridfc.com/#/transfers</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://timegridfc.com/#/videos</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://timegridfc.com/#/about</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://timegridfc.com/#/contact</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://timegridfc.com/#/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://timegridfc.com/#/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.timegridfc.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.timegridfc.com/#/news</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.timegridfc.com/#/players</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.timegridfc.com/#/teams</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.timegridfc.com/#/schedule</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.timegridfc.com/#/leagues</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.timegridfc.com/#/worldcup</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.timegridfc.com/#/awards</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.timegridfc.com/#/transfers</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.timegridfc.com/#/videos</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.timegridfc.com/#/about</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.timegridfc.com/#/contact</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.timegridfc.com/#/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.timegridfc.com/#/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>
