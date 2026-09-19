@@ -139,6 +139,11 @@
       document.addEventListener("click", onDocClick);
       // If live data arrives after a cold start, re-render header/footer + page.
       S.setOnHydrate(() => { U.renderHeader(); U.renderFooter(); routePublic(); });
+      // Redirect any legacy hash URL (/#/news) to the real path (/news) so old
+      // bookmarks and previously-indexed links keep working.
+      if (USE_PATH && /^#\/.+/.test(location.hash)) {
+        history.replaceState({}, "", location.hash.replace(/^#/, ""));
+      }
       routePublic();
     }
   }
