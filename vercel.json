@@ -14,7 +14,7 @@
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/admin.html", "dest": "/admin.html" },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/(robots\\.txt|sitemap\\.xml|ads\\.txt)", "dest": "/$1" },
+    { "src": "/(robots\\.txt|ads\\.txt)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/api/index.js" }
   ]
 }

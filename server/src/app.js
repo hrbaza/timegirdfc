@@ -42,8 +42,18 @@ if (clientDirEnv) {
   const clientDir = path.resolve(__dirname, "..", clientDirEnv);
   // Only expose the frontend's own files — never the server/ folder or .env.
   app.use("/assets", express.static(path.join(clientDir, "assets")));
-  // SEO / AdSense files served from the site root.
-  app.get(["/robots.txt", "/sitemap.xml", "/ads.txt"], (req, res) => res.sendFile(path.join(clientDir, req.path.slice(1))));
+  // Dynamic sitemap: built from the DB so new articles appear automatically.
+  app.get("/sitemap.xml", async (req, res) => {
+    const sm = require("./sitemap");
+    let xml;
+    try { xml = await sm.buildSitemap(); }
+    catch (e) { console.error("sitemap error:", e.message); xml = sm.staticSitemapXml(); }
+    res.set("Content-Type", "application/xml; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+    res.send(xml);
+  });
+  // Other SEO / AdSense files served from the site root.
+  app.get(["/robots.txt", "/ads.txt"], (req, res) => res.sendFile(path.join(clientDir, req.path.slice(1))));
   // Admin panel lives on its own protected URL.
   app.get(["/admin", "/admin.html"], (req, res) => res.sendFile(path.join(clientDir, "admin.html")));
   // Every other route → server-render the page's <head> meta (+ article content)
