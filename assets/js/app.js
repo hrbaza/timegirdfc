@@ -1,13 +1,18 @@
 /* =========================================================================
-   Time Grid FC — App bootstrap + hash router
+   Time Grid FC — App bootstrap + router
    Runs in two modes depending on the page:
-     • public  (index.html)      → full site; #/admin redirects to admin.html
-     • admin   (admin.html, body[data-app="admin"]) → Admin Panel only
+     • public  (index.html) → full site; real path URLs (/news, /player/x…)
+       via the History API on the web, hash fallback on file://
+     • admin   (admin.html, body[data-app="admin"]) → Admin Panel only (hash)
    ========================================================================= */
 (function () {
   const S = TG.store, U = TG.ui, P = TG.pages;
   const ADMIN_MODE = document.body && document.body.getAttribute("data-app") === "admin";
+  // Public site uses real path URLs (History API) so every page is separately
+  // crawlable/indexable. On file:// (no server) it falls back to hash routing.
+  const USE_PATH = location.protocol !== "file:";
 
+  // Admin (admin.html) always uses hash routing (#/section) — it is noindex.
   function parseHash() {
     const raw = location.hash.replace(/^#\/?/, "");
     const [path, query] = raw.split("?");
@@ -15,6 +20,40 @@
     const params = {};
     if (query) query.split("&").forEach((kv) => { const [k, v] = kv.split("="); params[decodeURIComponent(k)] = decodeURIComponent(v || ""); });
     return { seg, params };
+  }
+
+  // Public router: read the current route from the path (or the hash on file://).
+  function parseRoute() {
+    let pathPart, queryPart;
+    if (USE_PATH) {
+      pathPart = decodeURI(location.pathname);
+      queryPart = location.search.replace(/^\?/, "");
+    } else {
+      const raw = location.hash.replace(/^#\/?/, "");
+      const qi = raw.indexOf("?");
+      pathPart = qi >= 0 ? raw.slice(0, qi) : raw;
+      queryPart = qi >= 0 ? raw.slice(qi + 1) : "";
+    }
+    const seg = pathPart.split("/").filter(Boolean);
+    const params = {};
+    if (queryPart) queryPart.split("&").forEach((kv) => { const [k, v] = kv.split("="); params[decodeURIComponent(k)] = decodeURIComponent(v || ""); });
+    return { seg, params };
+  }
+
+  // Intercept internal link clicks → client-side navigation (no full reload).
+  function onDocClick(e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest && e.target.closest("a");
+    if (!a) return;
+    const href = a.getAttribute("href");
+    if (!href) return;
+    if (a.target === "_blank" || a.hasAttribute("download")) return;
+    if (/^(https?:|mailto:|tel:|\/\/)/i.test(href)) return; // external / protocol-relative
+    if (href.charAt(0) === "#") return;                     // in-page anchor (e.g. #sec-1)
+    if (href === "/admin" || href.indexOf("admin.html") === 0) return; // admin = real navigation
+    if (href.charAt(0) !== "/") return;                     // only internal root-relative links
+    e.preventDefault();
+    U.go(href); // pushState + dispatch popstate → routePublic
   }
 
   /* ---- Admin page router (admin.html): every route is an admin section ---- */
@@ -34,7 +73,7 @@
   /* ---- Public site router (index.html) ---- */
   function routePublic() {
     const app = document.getElementById("tg-app");
-    const { seg, params } = parseHash();
+    const { seg, params } = parseRoute();
     const r = seg[0] || "";
     const id = seg[1] || "";
 
@@ -94,10 +133,12 @@
       U.renderHeader();
       U.renderFooter();
       U.init(); // cursor + scroll + search + key shortcuts
+      // Path mode → popstate (back/forward + U.go); file:// → hashchange.
+      window.addEventListener("popstate", routePublic);
       window.addEventListener("hashchange", routePublic);
+      document.addEventListener("click", onDocClick);
       // If live data arrives after a cold start, re-render header/footer + page.
       S.setOnHydrate(() => { U.renderHeader(); U.renderFooter(); routePublic(); });
-      if (!location.hash) location.replace("#/");
       routePublic();
     }
   }

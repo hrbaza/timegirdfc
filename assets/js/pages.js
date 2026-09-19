@@ -30,7 +30,7 @@ TG.pages = (function () {
 
   /* ---- card renderers ---- */
   function newsCard(n) {
-    return `<a class="card reveal" href="#/news/${n.id}">
+    return `<a class="card reveal" href="/news/${n.id}">
       <div class="thumb">${thumb(n.category, n.cover)}<span class="tag chip">${esc(n.category)}</span></div>
       <div class="pad">
         <h3>${esc(n.title)}</h3>
@@ -48,7 +48,7 @@ TG.pages = (function () {
   }
   function playerCard(p) {
     const c = S.country(p.country), t = S.team(p.club);
-    return `<a class="card person reveal" href="#/player/${p.id}">
+    return `<a class="card person reveal" href="/player/${p.id}">
       <div class="ph">${initials(p.name)}${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.name)}" loading="lazy" onerror="this.remove()">` : ""}</div>
       <h3>${esc(p.name)}</h3>
       <div class="sub">${c ? U.flag(c.code) + " " : ""}${esc(p.pos)}${t ? " · " + esc(t.name) : ""}</div>
@@ -56,7 +56,7 @@ TG.pages = (function () {
   }
   function teamCard(t) {
     const c = S.country(t.country);
-    return `<a class="card person reveal" href="#/team/${t.id}">
+    return `<a class="card person reveal" href="/team/${t.id}">
       <div class="ph" style="border-radius:18px">${initials(t.name)}${t.country ? U.flagFill(t.country) : (t.crest || "")}</div>
       <h3>${esc(t.name)}</h3>
       <div class="sub">${c ? esc(c.name) + " · " : ""}${esc(t.stadium)}</div>
@@ -70,15 +70,15 @@ TG.pages = (function () {
         ? `<div class="score">${f.hs}–${f.as}</div><div class="comp">FT</div>`
         : `<div class="ko">${f.time}</div><div class="comp">${U.fmtDay(f.date)}</div>`;
     return `<div class="fixture reveal">
-      <div class="team"><span class="crest">${h ? (h.crest || initials(h.name)) : "?"}</span>${h ? `<a href="#/team/${h.id}">${esc(h.name)}</a>` : "TBD"}</div>
+      <div class="team"><span class="crest">${h ? (h.crest || initials(h.name)) : "?"}</span>${h ? `<a href="/team/${h.id}">${esc(h.name)}</a>` : "TBD"}</div>
       <div class="mid">${mid}<div class="comp">${lg ? esc(lg.name) : ""}</div></div>
-      <div class="team away"><span class="crest">${a ? (a.crest || initials(a.name)) : "?"}</span>${a ? `<a href="#/team/${a.id}">${esc(a.name)}</a>` : "TBD"}</div>
+      <div class="team away"><span class="crest">${a ? (a.crest || initials(a.name)) : "?"}</span>${a ? `<a href="/team/${a.id}">${esc(a.name)}</a>` : "TBD"}</div>
     </div>`;
   }
   function transferRow(tr) {
     const p = tr.player ? S.player(tr.player) : null;
     return `<div class="fixture reveal" style="grid-template-columns:1fr auto 1fr">
-      <div class="team">${p ? `<a href="#/player/${p.id}"><b>${esc(tr.playerName)}</b></a>` : `<b>${esc(tr.playerName)}</b>`}</div>
+      <div class="team">${p ? `<a href="/player/${p.id}"><b>${esc(tr.playerName)}</b></a>` : `<b>${esc(tr.playerName)}</b>`}</div>
       <div class="mid"><div class="ko">${icon("arrow")}</div><div class="comp">${esc(tr.type)}${tr.fee ? " · " + esc(tr.fee) : ""}</div><div class="comp">${U.fmtDate(tr.date)}</div></div>
       <div class="team away"><span>${esc(tr.from)} → <b>${esc(tr.to)}</b></span></div>
     </div>`;
@@ -105,8 +105,8 @@ TG.pages = (function () {
             <h1>Where football <span class="hl">lives</span>.<br>News, stats & every story.</h1>
             <p class="lead">Daily analysis, a searchable database of players and clubs, match schedules, league & World Cup history, awards, transfers — and every video from the Time Grid FC channel.</p>
             <div class="hero-cta">
-              <a class="btn" href="#/news">Read the latest ${icon("arrow")}</a>
-              <a class="btn ghost" href="#/schedule">Today's matches</a>
+              <a class="btn" href="/news">Read the latest ${icon("arrow")}</a>
+              <a class="btn ghost" href="/schedule">Today's matches</a>
             </div>
             <div class="hero-stats">
               <div><div class="n">${S.all("players").length}+</div><div class="l">Players tracked</div></div>
@@ -116,7 +116,7 @@ TG.pages = (function () {
             </div>
           </div>
           <div>
-            ${feat ? `<a class="hero-card reveal" href="#/news/${feat.id}">
+            ${feat ? `<a class="hero-card reveal" href="/news/${feat.id}">
               <div class="cover">${thumb(feat.category, feat.cover)}<span class="hero-badge">Featured</span></div>
               <div class="body"><span class="chip">${esc(feat.category)}</span>
                 <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
@@ -128,23 +128,23 @@ TG.pages = (function () {
       </section>
 
       <section class="wrap section" style="padding-top:0">
-        <div class="section-head"><div><span class="eyebrow">FR-6 · Fixtures</span><h2>Today's Matches</h2></div><a class="btn ghost sm" href="#/schedule">Full schedule ${icon("arrow")}</a></div>
+        <div class="section-head"><div><span class="eyebrow">FR-6 · Fixtures</span><h2>Today's Matches</h2></div><a class="btn ghost sm" href="/schedule">Full schedule ${icon("arrow")}</a></div>
         <div class="grid cols-2" id="home-fixtures">${today.length ? today.map(fixtureRow).join("") : empty("No matches scheduled for today. Check the full schedule.")}</div>
       </section>
 
       <section class="wrap section" style="padding-top:0">
-        <div class="section-head"><div><span class="eyebrow">FR-2 · News & Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="#/news">All news ${icon("arrow")}</a></div>
+        <div class="section-head"><div><span class="eyebrow">FR-2 · News & Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news ${icon("arrow")}</a></div>
         <div class="grid cols-3">${latest.map(newsCard).join("")}</div>
       </section>
 
       <section class="wrap section" style="padding-top:0">
         <div class="grid cols-2" style="align-items:start">
           <div>
-            <div class="section-head"><div><span class="eyebrow">FR-10 · Transfers</span><h2>Latest Transfers</h2></div><a class="btn ghost sm" href="#/transfers">All ${icon("arrow")}</a></div>
+            <div class="section-head"><div><span class="eyebrow">FR-10 · Transfers</span><h2>Latest Transfers</h2></div><a class="btn ghost sm" href="/transfers">All ${icon("arrow")}</a></div>
             <div class="grid" style="gap:.6rem">${transfers.map(transferRow).join("")}</div>
           </div>
           <div>
-            <div class="section-head"><div><span class="eyebrow">FR-3 · Videos</span><h2>From the Channel</h2></div><a class="btn ghost sm" href="#/videos">All videos ${icon("arrow")}</a></div>
+            <div class="section-head"><div><span class="eyebrow">FR-3 · Videos</span><h2>From the Channel</h2></div><a class="btn ghost sm" href="/videos">All videos ${icon("arrow")}</a></div>
             <div class="grid" style="gap:.9rem">${vids.map(videoCard).join("")}</div>
           </div>
         </div>
@@ -155,8 +155,8 @@ TG.pages = (function () {
           <h2 style="color:#fff">Explore the football universe</h2>
           <p style="opacity:.92;max-width:52ch;margin-inline:auto">Dive into player profiles by country, club squads, league champions, and the complete history of the World Cup.</p>
           <div class="hero-cta" style="justify-content:center;margin-top:1rem">
-            <a class="btn gold" href="#/players">Players by country</a>
-            <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.5)" href="#/worldcup">World Cup history</a>
+            <a class="btn gold" href="/players">Players by country</a>
+            <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.5)" href="/worldcup">World Cup history</a>
           </div>
         </div>
       </section>`;
@@ -172,7 +172,7 @@ TG.pages = (function () {
     const cats = ["All", ...S.newsCategories()];
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["News"]])}
+        ${crumbs([["Home", "/"], ["News"]])}
         <div class="section-head"><div><span class="eyebrow">FR-2 · News & Blog</span><h2>Football News</h2></div></div>
         <div class="filters" id="news-filters">${cats.map((c) => `<button class="pill${c === "All" ? " active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>
         <div class="grid cols-3" id="news-grid"></div>
@@ -258,7 +258,7 @@ TG.pages = (function () {
 
     app.innerHTML = `
       <article class="wrap section article">
-        ${crumbs([["Home", "#/"], ["News", "#/news"], [n.category, "#/news"], [n.title]])}
+        ${crumbs([["Home", "/"], ["News", "/news"], [n.category, "/news"], [n.title]])}
         <span class="badge-cat">${esc(n.category)}</span>
         <h1>${esc(n.title)}</h1>
         <div class="byline">
@@ -275,7 +275,7 @@ TG.pages = (function () {
         <div class="content">${bodyHtml}</div>
         <div class="author-box card">
           <div class="av">${initials(n.author)}</div>
-          <div><div class="who">${esc(n.author)}</div><p class="muted" style="margin:.2rem 0 0">Football writing from the Time Grid FC editorial team — analysis, news and features. <a href="#/about">About us</a> · <a href="#/contact">Contact</a></p></div>
+          <div><div class="who">${esc(n.author)}</div><p class="muted" style="margin:.2rem 0 0">Football writing from the Time Grid FC editorial team — analysis, news and features. <a href="/about">About us</a> · <a href="/contact">Contact</a></p></div>
         </div>
         <div id="comments"></div>
       </article>
@@ -291,7 +291,7 @@ TG.pages = (function () {
     const list = S.commentsFor(postId);
     const form = u
       ? `<form id="cform" style="margin:1rem 0 1.4rem"><div class="field"><textarea class="textarea" id="ctext" placeholder="Share your thoughts, ${esc(u.name)}…" required></textarea></div><button class="btn" type="submit">Post comment</button></form>`
-      : `<div class="card" style="padding:1.2rem;margin:1rem 0 1.4rem;text-align:center"><p style="margin:.2rem 0">💬 <b>Sign in to join the conversation.</b></p><a class="btn sm" href="#/signin">Sign In</a> <a class="btn sm ghost" href="#/signup">Create account</a></div>`;
+      : `<div class="card" style="padding:1.2rem;margin:1rem 0 1.4rem;text-align:center"><p style="margin:.2rem 0">💬 <b>Sign in to join the conversation.</b></p><a class="btn sm" href="/signin">Sign In</a> <a class="btn sm ghost" href="/signup">Create account</a></div>`;
     host.innerHTML = `<div class="section" style="padding-bottom:0"><div class="section-head"><h2 style="font-size:1.3rem">Comments <span class="muted" style="font-weight:400">(${list.length})</span></h2></div>${form}
       <div id="clist">${list.length ? list.map((c) => `
         <div class="comment"><div class="av">${initials(c.author)}</div><div><div><span class="who">${esc(c.author)}</span> <span class="when">· ${U.timeAgo(c.createdAt)}</span></div><p style="margin:.2rem 0 0">${esc(c.text)}</p></div></div>`).join("") : `<p class="muted">Be the first to comment.</p>`}</div></div>`;
@@ -314,10 +314,10 @@ TG.pages = (function () {
     const countries = S.countriesWithPlayers().filter((c) => c.count > 0);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Players"]])}
+        ${crumbs([["Home", "/"], ["Players"]])}
         <div class="section-head"><div><span class="eyebrow">FR-4 · Players Database</span><h2>Choose a country</h2><p class="muted" style="margin:0">Select a nation to see every player from that country in our database.</p></div></div>
         <div class="grid auto">${countries.map((c) => `
-          <a class="country-tile reveal" href="#/players/${c.code}">
+          <a class="country-tile reveal" href="/players/${c.code}">
             <span class="fe">${U.flag(c.code, 34)}</span>
             <span><span class="n">${esc(c.name)}</span><br><span class="c">${c.count} player${c.count>1?"s":""}</span></span>
           </a>`).join("")}</div>
@@ -332,7 +332,7 @@ TG.pages = (function () {
     const list = S.playersByCountry(c.code);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Players", "#/players"], [c.name]])}
+        ${crumbs([["Home", "/"], ["Players", "/players"], [c.name]])}
         <div class="section-head"><div><span class="eyebrow">${U.flag(c.code)} ${esc(c.name)}</span><h2>${list.length} Player${list.length>1?"s":""}</h2></div></div>
         <div class="search-box" style="max-width:420px;margin-bottom:1.2rem"><span>${icon("search")}</span><input class="input" id="pfilter" placeholder="Search by name, position or club…" autocomplete="off"></div>
         <div class="grid auto" id="pgrid"></div>
@@ -361,7 +361,7 @@ TG.pages = (function () {
     const totals = (p.stats || []).reduce((a, s) => ({ apps: a.apps + (s.apps||0), goals: a.goals + (s.goals||0), assists: a.assists + (s.assists||0) }), { apps: 0, goals: 0, assists: 0 });
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Players", "#/players"], [c ? c.name : "", c ? "#/players/" + c.code : "#/players"], [p.name]])}
+        ${crumbs([["Home", "/"], ["Players", "/players"], [c ? c.name : "", c ? "/players/" + c.code : "/players"], [p.name]])}
         <div class="profile-head reveal">
           <div class="photo">${initials(p.name)}${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.name)}" onerror="this.remove()">` : ""}</div>
           <div>
@@ -371,7 +371,7 @@ TG.pages = (function () {
               <div><div class="k">Nationality</div><div class="v">${c ? U.flag(c.code) + " " + esc(c.name) : "—"}</div></div>
               <div><div class="k">Age</div><div class="v">${age} yrs</div></div>
               <div><div class="k">Born</div><div class="v">${U.fmtDate(p.dob)}</div></div>
-              <div><div class="k">Club</div><div class="v">${t ? `<a href="#/team/${t.id}">${esc(t.name)}</a>` : "—"}</div></div>
+              <div><div class="k">Club</div><div class="v">${t ? `<a href="/team/${t.id}">${esc(t.name)}</a>` : "—"}</div></div>
             </div>
           </div>
         </div>
@@ -395,7 +395,7 @@ TG.pages = (function () {
           <div>
             <div class="section-head"><h2 style="font-size:1.2rem">🏆 Honours & Awards</h2></div>
             ${honors.length ? `<div class="table-wrap"><table class="tg"><thead><tr><th>Award</th><th>Year</th></tr></thead><tbody>
-              ${honors.map((h) => `<tr><td>${h.icon} <a href="#/awards/${h.awardId}">${esc(h.award)}</a></td><td class="rank">${h.year}</td></tr>`).join("")}
+              ${honors.map((h) => `<tr><td>${h.icon} <a href="/awards/${h.awardId}">${esc(h.award)}</a></td><td class="rank">${h.year}</td></tr>`).join("")}
             </tbody></table></div>` : `<div class="card" style="padding:1.2rem"><p class="muted" style="margin:0">No individual awards recorded for this player yet.</p></div>`}
           </div>
         </div>
@@ -418,7 +418,7 @@ TG.pages = (function () {
     const leagues = S.all("leagues").filter((l) => S.all("teams").some((t) => t.league === l.id));
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Teams"]])}
+        ${crumbs([["Home", "/"], ["Teams"]])}
         <div class="section-head"><div><span class="eyebrow">FR-5 · Teams & Clubs</span><h2>Clubs & Teams</h2></div></div>
         <div class="filters" id="tfilters">
           <button class="pill active" data-l="All">All</button>
@@ -448,7 +448,7 @@ TG.pages = (function () {
     const roster = S.squad(t.id);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Teams", "#/teams"], [t.name]])}
+        ${crumbs([["Home", "/"], ["Teams", "/teams"], [t.name]])}
         <div class="profile-head reveal">
           <div class="photo" style="font-size:2.6rem">${initials(t.name)}${t.country ? U.flagFill(t.country) : (t.crest || "")}</div>
           <div>
@@ -458,7 +458,7 @@ TG.pages = (function () {
               <div><div class="k">Founded</div><div class="v">${t.founded}</div></div>
               <div><div class="k">Stadium</div><div class="v">${esc(t.stadium)}</div></div>
               <div><div class="k">Squad size</div><div class="v">${roster.length}</div></div>
-              ${lg ? `<div><div class="k">League</div><div class="v"><a href="#/leagues/${lg.id}">${esc(lg.name)}</a></div></div>` : ""}
+              ${lg ? `<div><div class="k">League</div><div class="v"><a href="/leagues/${lg.id}">${esc(lg.name)}</a></div></div>` : ""}
             </div>
           </div>
         </div>
@@ -484,7 +484,7 @@ TG.pages = (function () {
     const comps = S.all("leagues").filter((l) => S.all("fixtures").some((f) => f.comp === l.id));
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Schedule"]])}
+        ${crumbs([["Home", "/"], ["Schedule"]])}
         <div class="section-head"><div><span class="eyebrow">FR-6 · Fixtures</span><h2>Match Schedule</h2></div></div>
         <div class="filters" id="sfilters">
           <button class="pill active" data-c="All">All competitions</button>
@@ -527,11 +527,11 @@ TG.pages = (function () {
     const list = headline.map((id) => S.league(id)).filter(Boolean);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Leagues"]])}
+        ${crumbs([["Home", "/"], ["Leagues"]])}
         <div class="section-head"><div><span class="eyebrow">FR-7 · Competitions</span><h2>Leagues & Competitions</h2></div></div>
         <div class="grid cols-3">${list.map((l) => {
           const champ = (l.champions || [])[0];
-          return `<a class="card reveal" href="#/leagues/${l.id}"><div class="pad">
+          return `<a class="card reveal" href="/leagues/${l.id}"><div class="pad">
             <div style="font-size:2rem">${U.compFlag(l, 40)}</div>
             <h3>${esc(l.name)}</h3>
             <div class="meta">${esc(l.type)} · ${esc(l.country)}</div>
@@ -550,7 +550,7 @@ TG.pages = (function () {
     const champ = (l.champions || [])[0];
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Leagues", "#/leagues"], [l.name]])}
+        ${crumbs([["Home", "/"], ["Leagues", "/leagues"], [l.name]])}
         <div class="profile-head reveal">
           <div class="photo" style="font-size:3rem;background:linear-gradient(135deg,var(--green-800),var(--green-600))">${U.compFlag(l, 52)}</div>
           <div><span class="chip">${esc(l.type)} · ${esc(l.country)}</span><h1>${esc(l.name)}</h1>
@@ -580,7 +580,7 @@ TG.pages = (function () {
     let type = "men";
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["World Cup"]])}
+        ${crumbs([["Home", "/"], ["World Cup"]])}
         <div class="section-head"><div><span class="eyebrow">FR-8 · World Cup</span><h2>FIFA World Cup History</h2></div></div>
         <div class="filters" id="wcfilters">
           <button class="pill active" data-t="men">🏆 Men's World Cup</button>
@@ -626,11 +626,11 @@ TG.pages = (function () {
     const list = S.all("awards");
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Awards"]])}
+        ${crumbs([["Home", "/"], ["Awards"]])}
         <div class="section-head"><div><span class="eyebrow">FR-9 · Awards</span><h2>Individual Awards</h2></div></div>
         <div class="grid cols-3">${list.map((a) => {
           const w = (a.winners || [])[0];
-          return `<a class="card reveal" href="#/awards/${a.id}"><div class="pad">
+          return `<a class="card reveal" href="/awards/${a.id}"><div class="pad">
             <div style="font-size:2.4rem">${a.icon}</div><h3>${esc(a.name)}</h3>
             <p class="muted" style="font-size:.88rem;margin:0">${esc(a.desc)}</p>
             ${w ? `<div style="margin-top:.5rem"><span class="chip gold">Latest: ${esc(w.playerName)} (${w.year})</span></div>` : ""}
@@ -646,14 +646,14 @@ TG.pages = (function () {
     U.setMeta(a.name, `${a.name} — full winners history.`);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Awards", "#/awards"], [a.name]])}
+        ${crumbs([["Home", "/"], ["Awards", "/awards"], [a.name]])}
         <div class="profile-head reveal">
           <div class="photo" style="font-size:3rem;background:linear-gradient(135deg,var(--gold-500),#b45309)">${a.icon}</div>
           <div><span class="chip gold">Individual Award</span><h1>${esc(a.name)}</h1><p class="muted" style="margin:.3rem 0 0;max-width:52ch">${esc(a.desc)}</p></div>
         </div>
         <div class="section" style="padding-bottom:0"><div class="section-head"><h2 style="font-size:1.2rem">Winners history</h2></div>
           <div class="table-wrap"><table class="tg"><thead><tr><th>Year</th><th>Player</th><th>Club at the time</th></tr></thead><tbody>
-            ${(a.winners||[]).map((w) => `<tr><td class="rank">${w.year}</td><td>${w.player ? `<a href="#/player/${w.player}"><b>${esc(w.playerName)}</b></a>` : `<b>${esc(w.playerName)}</b>`}</td><td>${esc(w.club)}</td></tr>`).join("")}
+            ${(a.winners||[]).map((w) => `<tr><td class="rank">${w.year}</td><td>${w.player ? `<a href="/player/${w.player}"><b>${esc(w.playerName)}</b></a>` : `<b>${esc(w.playerName)}</b>`}</td><td>${esc(w.club)}</td></tr>`).join("")}
           </tbody></table></div>
         </div>
       </section>`;
@@ -667,7 +667,7 @@ TG.pages = (function () {
     U.setMeta("Transfer News", "The latest football transfers — permanent deals and loans across the biggest clubs.");
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Transfers"]])}
+        ${crumbs([["Home", "/"], ["Transfers"]])}
         <div class="section-head"><div><span class="eyebrow">FR-10 · Transfers</span><h2>Transfer Feed</h2></div></div>
         <div class="search-box" style="max-width:420px;margin-bottom:1.2rem"><span>${icon("search")}</span><input class="input" id="trf" placeholder="Filter by player or club…" autocomplete="off"></div>
         <div class="grid" style="gap:.7rem" id="trlist"></div>
@@ -693,7 +693,7 @@ TG.pages = (function () {
     const cats = ["All", "Match Analysis", "Player Analysis", "News"];
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Videos"]])}
+        ${crumbs([["Home", "/"], ["Videos"]])}
         <div class="section-head"><div><span class="eyebrow">FR-3 · Videos</span><h2>Time Grid FC on YouTube</h2><p class="muted" style="margin:0">Clicking any video opens it on the Time Grid FC channel.</p></div>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Visit channel</a></div>
         <div class="filters" id="vfilters">${cats.map((c) => `<button class="pill${c==="All"?" active":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
@@ -720,7 +720,7 @@ TG.pages = (function () {
     U.setMeta("About Us", "About Time Grid FC — an independent football news, analysis and statistics hub, and the companion site to the Time Grid FC YouTube channel.");
     app.innerHTML = `
       <section class="wrap section article">
-        ${crumbs([["Home", "#/"], ["About"]])}
+        ${crumbs([["Home", "/"], ["About"]])}
         <span class="eyebrow">About Us</span>
         <h1>About Time Grid FC</h1>
         <div class="content">
@@ -733,7 +733,7 @@ TG.pages = (function () {
           <h2>Media &amp; image credits</h2>
           <p>Player photographs are sourced from <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a> under their respective Creative Commons licences; editorial and cover imagery is provided by <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> under the Unsplash licence; country flags are from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn</a>. Video thumbnails belong to their respective owners and are shown only to link viewers to the original videos on YouTube.</p>
           <h2>Contact</h2>
-          <p>Have a story tip, a correction, or a question? Visit our <a href="#/contact">Contact page</a> or reach us any time at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a>.</p>
+          <p>Have a story tip, a correction, or a question? Visit our <a href="/contact">Contact page</a> or reach us any time at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a>.</p>
         </div>
       </section>`;
   }
@@ -743,7 +743,7 @@ TG.pages = (function () {
     U.setMeta("Contact Us", "Get in touch with the Time Grid FC team — story tips, corrections, feedback and enquiries.");
     app.innerHTML = `
       <section class="wrap section article">
-        ${crumbs([["Home", "#/"], ["Contact"]])}
+        ${crumbs([["Home", "/"], ["Contact"]])}
         <span class="eyebrow">Contact Us</span>
         <h1>Get in touch</h1>
         <div class="content">
@@ -768,7 +768,7 @@ TG.pages = (function () {
     const updated = U.fmtDate(new Date().toISOString());
     app.innerHTML = `
       <section class="wrap section article">
-        ${crumbs([["Home", "#/"], ["Privacy Policy"]])}
+        ${crumbs([["Home", "/"], ["Privacy Policy"]])}
         <span class="eyebrow">Legal</span>
         <h1>Privacy Policy</h1>
         <div class="content">
@@ -796,7 +796,7 @@ TG.pages = (function () {
           <p>We may use privacy-respecting analytics tools to measure traffic and improve content. These tools may set cookies and process aggregated usage data.</p>
 
           <h2>Third-party links &amp; media</h2>
-          <p>This site links to external sites (such as YouTube) and displays media sourced from third parties (see our <a href="#/about">media credits</a>). We are not responsible for the content or privacy practices of external sites.</p>
+          <p>This site links to external sites (such as YouTube) and displays media sourced from third parties (see our <a href="/about">media credits</a>). We are not responsible for the content or privacy practices of external sites.</p>
 
           <h2>Children's privacy</h2>
           <p>This site is not directed to children under the age of 13, and we do not knowingly collect personal information from them.</p>
@@ -808,7 +808,7 @@ TG.pages = (function () {
           <p>We may update this Privacy Policy from time to time. Changes will be posted on this page with a revised "last updated" date.</p>
 
           <h2>Contact</h2>
-          <p>Questions about this policy? Email us at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a> or use our <a href="#/contact">Contact page</a>.</p>
+          <p>Questions about this policy? Email us at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a> or use our <a href="/contact">Contact page</a>.</p>
         </div>
       </section>`;
   }
@@ -819,7 +819,7 @@ TG.pages = (function () {
     const updated = U.fmtDate(new Date().toISOString());
     app.innerHTML = `
       <section class="wrap section article">
-        ${crumbs([["Home", "#/"], ["Terms & Disclaimer"]])}
+        ${crumbs([["Home", "/"], ["Terms & Disclaimer"]])}
         <span class="eyebrow">Legal</span>
         <h1>Terms of Use &amp; Disclaimer</h1>
         <div class="content">
@@ -830,7 +830,7 @@ TG.pages = (function () {
           <p>All articles are provided for general information, analysis, and entertainment. While we strive for accuracy, football data and news change quickly and we make no warranty that all content is complete, current, or error-free. Nothing on this site constitutes professional or betting advice.</p>
 
           <h2>Intellectual property</h2>
-          <p>Original editorial content on this site is owned by Time Grid FC. Club names, competition names, and any trademarks referenced remain the property of their respective owners and are used for identification and descriptive purposes only. Third-party images are used under the licences described in our <a href="#/about">media credits</a>.</p>
+          <p>Original editorial content on this site is owned by Time Grid FC. Club names, competition names, and any trademarks referenced remain the property of their respective owners and are used for identification and descriptive purposes only. Third-party images are used under the licences described in our <a href="/about">media credits</a>.</p>
 
           <h2>User-contributed content</h2>
           <p>You are responsible for comments you post. Do not post unlawful, abusive, misleading, or infringing content. We may moderate, edit, or remove comments at our discretion.</p>
@@ -854,7 +854,7 @@ TG.pages = (function () {
      AUTH: sign in / sign up / account (FR-11)
      ======================================================================= */
   function signin(app) {
-    if (S.currentUser()) { U.go("#/account"); return; }
+    if (S.currentUser()) { U.go("/account"); return; }
     U.setMeta("Sign In");
     app.innerHTML = `
       <section class="wrap auth-wrap"><div class="auth-card">
@@ -867,7 +867,7 @@ TG.pages = (function () {
           <button class="btn block" type="submit">Sign In</button>
         </form>
         <div class="divider">or</div>
-        <p class="center" style="margin:0">New here? <a href="#/signup" style="color:var(--primary);font-weight:700">Create an account</a></p>
+        <p class="center" style="margin:0">New here? <a href="/signup" style="color:var(--primary);font-weight:700">Create an account</a></p>
       </div></section>`;
     document.getElementById("siform").onsubmit = async (e) => {
       e.preventDefault();
@@ -876,12 +876,12 @@ TG.pages = (function () {
       btn.disabled = false;
       if (res.error) { U.toast(res.error, "err"); return; }
       U.toast("Signed in — welcome, " + res.user.name.split(" ")[0], "ok");
-      U.renderHeader(); U.setActiveNav(currentRoute()); U.go("#/account");
+      U.renderHeader(); U.setActiveNav(currentRoute()); U.go("/account");
     };
   }
 
   function signup(app) {
-    if (S.currentUser()) { U.go("#/account"); return; }
+    if (S.currentUser()) { U.go("/account"); return; }
     U.setMeta("Create Account");
     app.innerHTML = `
       <section class="wrap auth-wrap"><div class="auth-card">
@@ -895,7 +895,7 @@ TG.pages = (function () {
           <button class="btn block" type="submit">Create account</button>
         </form>
         <div class="divider">or</div>
-        <p class="center" style="margin:0">Already have an account? <a href="#/signin" style="color:var(--primary);font-weight:700">Sign in</a></p>
+        <p class="center" style="margin:0">Already have an account? <a href="/signin" style="color:var(--primary);font-weight:700">Sign in</a></p>
       </div></section>`;
     document.getElementById("suform").onsubmit = async (e) => {
       e.preventDefault();
@@ -904,18 +904,18 @@ TG.pages = (function () {
       btn.disabled = false;
       if (res.error) { U.toast(res.error, "err"); return; }
       U.toast("Account created — welcome!", "ok");
-      U.renderHeader(); U.setActiveNav(currentRoute()); U.go("#/account");
+      U.renderHeader(); U.setActiveNav(currentRoute()); U.go("/account");
     };
   }
 
   function account(app) {
     const u = S.currentUser();
-    if (!u) { U.go("#/signin"); return; }
+    if (!u) { U.go("/signin"); return; }
     U.setMeta("My Account");
     const myComments = S.all("comments").filter((c) => c.userId === u.id);
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "#/"], ["Account"]])}
+        ${crumbs([["Home", "/"], ["Account"]])}
         <div class="profile-head reveal">
           <div class="photo">${initials(u.name)}</div>
           <div><span class="chip">${esc(u.role)}</span><h1>${esc(u.name)}</h1>
@@ -929,20 +929,23 @@ TG.pages = (function () {
           <button class="btn ghost" id="signout-btn">Sign out</button>
         </div>
         <div class="section" style="padding-bottom:0"><div class="section-head"><h2 style="font-size:1.2rem">Your recent comments</h2></div>
-          ${myComments.length ? myComments.slice(0,10).map((c) => { const n = S.news1(c.postId); return `<div class="comment"><div class="av">${initials(u.name)}</div><div><div class="who">${n ? `<a href="#/news/${n.id}">${esc(n.title)}</a>` : "Post"} <span class="when">· ${U.timeAgo(c.createdAt)} · ${esc(c.status)}</span></div><p style="margin:.2rem 0 0">${esc(c.text)}</p></div></div>`; }).join("") : `<p class="muted">You haven't posted any comments yet.</p>`}
+          ${myComments.length ? myComments.slice(0,10).map((c) => { const n = S.news1(c.postId); return `<div class="comment"><div class="av">${initials(u.name)}</div><div><div class="who">${n ? `<a href="/news/${n.id}">${esc(n.title)}</a>` : "Post"} <span class="when">· ${U.timeAgo(c.createdAt)} · ${esc(c.status)}</span></div><p style="margin:.2rem 0 0">${esc(c.text)}</p></div></div>`; }).join("") : `<p class="muted">You haven't posted any comments yet.</p>`}
         </div>
       </section>`;
     document.getElementById("signout-btn").onclick = () => {
-      S.signOut(); U.toast("Signed out", "ok"); U.renderHeader(); U.setActiveNav(""); U.go("#/");
+      S.signOut(); U.toast("Signed out", "ok"); U.renderHeader(); U.setActiveNav(""); U.go("/");
     };
     U.observeReveals(app);
   }
 
-  function currentRoute() { return (location.hash.replace(/^#\/?/, "").split("/")[0]) || ""; }
+  function currentRoute() {
+    const raw = location.protocol !== "file:" ? location.pathname.replace(/^\/+/, "") : location.hash.replace(/^#\/?/, "");
+    return raw.split("/")[0] || "";
+  }
 
   function notFound(app) {
     U.setMeta("Not Found");
-    app.innerHTML = `<section class="wrap section">${empty("Page not found. Head back to the pitch.")}<div class="center"><a class="btn" href="#/">Go home</a></div></section>`;
+    app.innerHTML = `<section class="wrap section">${empty("Page not found. Head back to the pitch.")}<div class="center"><a class="btn" href="/">Go home</a></div></section>`;
   }
 
   return {

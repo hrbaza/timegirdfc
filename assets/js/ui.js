@@ -35,7 +35,19 @@ TG.ui = (function () {
     try { return new Date(dateStr).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }); }
     catch (e) { return dateStr; }
   }
-  const go = (hash) => { location.hash = hash; };
+  // Navigate to an internal route. Uses real path URLs (History API) on the web
+  // so each page is separately indexable; falls back to hash routing on file://.
+  function go(to) {
+    let path = String(to == null ? "/" : to).replace(/^#/, "");
+    if (path.charAt(0) !== "/") path = "/" + path;
+    if (location.protocol !== "file:") {
+      if (path !== location.pathname + location.search) history.pushState({}, "", path);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    } else {
+      if (location.hash !== "#" + path) location.hash = path;
+      else window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
+  }
 
   /* ---- Flags (Windows Chrome can't render flag emoji → use images + badge fallback) ---- */
   const ISO = { EN: "gb-eng" }; // our codes → flagcdn ISO
@@ -162,15 +174,15 @@ TG.ui = (function () {
     if (!document.getElementById("tg-header")) return;
     const u = store.currentUser();
     const theme = store.getTheme();
-    const links = NAV.map(([r, l]) => `<a href="#/${r}" data-route="${r}">${l}</a>`).join("");
+    const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
     const userCtl = u
-      ? `<a href="#/account" class="icon-btn" title="${esc(u.name)}" aria-label="Account">${initials(u.name)}</a>`
-      : `<a href="#/signin" class="btn sm ghost" style="height:40px">Sign In</a>`;
+      ? `<a href="/account" class="icon-btn" title="${esc(u.name)}" aria-label="Account">${initials(u.name)}</a>`
+      : `<a href="/signin" class="btn sm ghost" style="height:40px">Sign In</a>`;
     document.getElementById("tg-header").innerHTML = `
       <div class="ticker" id="tg-ticker"></div>
       <nav class="nav">
         <div class="nav-inner">
-          <a href="#/" class="brand" aria-label="Time Grid FC home">
+          <a href="/" class="brand" aria-label="Time Grid FC home">
             <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC
           </a>
           <div class="nav-links" id="tg-navlinks">
@@ -261,13 +273,13 @@ TG.ui = (function () {
           <p class="muted" style="max-width:34ch">Football news, stats & community — the official companion to the Time Grid FC YouTube channel.</p>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
         </div>
-        ${col("Explore", [["#/news", "News"], ["#/players", "Players"], ["#/teams", "Teams"], ["#/schedule", "Schedule"], ["#/videos", "Videos"]])}
-        ${col("Competitions", [["#/leagues", "Leagues"], ["#/worldcup", "World Cup"], ["#/awards", "Awards"], ["#/transfers", "Transfers"]])}
-        ${col("Company", [["#/about", "About Us"], ["#/contact", "Contact"], ["#/privacy", "Privacy Policy"], ["#/terms", "Terms & Disclaimer"]])}
+        ${col("Explore", [["/news", "News"], ["/players", "Players"], ["/teams", "Teams"], ["/schedule", "Schedule"], ["/videos", "Videos"]])}
+        ${col("Competitions", [["/leagues", "Leagues"], ["/worldcup", "World Cup"], ["/awards", "Awards"], ["/transfers", "Transfers"]])}
+        ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms & Disclaimer"]])}
       </div>
       <div class="wrap foot-bottom">
         <span>© ${new Date().getFullYear()} Time Grid FC. All rights reserved.</span>
-        <span><a href="#/privacy">Privacy</a> · <a href="#/terms">Terms</a> · <a href="#/contact">Contact</a></span>
+        <span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/contact">Contact</a></span>
       </div>`;
   }
 
@@ -359,10 +371,10 @@ TG.ui = (function () {
     const grp = (title, items) => items.length ? `<div class="sr-group"><h4>${title}</h4>${items.join("")}</div>` : "";
     const item = (href, ic, t, s) => `<a class="sr-item" href="${href}" onclick="TG.ui.closeSearch()"><span class="ic">${ic}</span><span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></span></a>`;
     box.innerHTML =
-      grp("Players", r.players.map((p) => { const c = store.country(p.country); return item(`#/player/${p.id}`, initials(p.name), p.name, `${p.pos} · ${c ? c.name : ""}`); })) +
-      grp("Teams", r.teams.map((t) => item(`#/team/${t.id}`, t.crest || initials(t.name), t.name, t.stadium))) +
-      grp("News", r.news.map((n) => item(`#/news/${n.id}`, "📰", n.title, n.category))) +
-      grp("Competitions", r.leagues.map((l) => item(`#/leagues/${l.id}`, compFlag(l), l.name, l.country)));
+      grp("Players", r.players.map((p) => { const c = store.country(p.country); return item(`/player/${p.id}`, initials(p.name), p.name, `${p.pos} · ${c ? c.name : ""}`); })) +
+      grp("Teams", r.teams.map((t) => item(`/team/${t.id}`, t.crest || initials(t.name), t.name, t.stadium))) +
+      grp("News", r.news.map((n) => item(`/news/${n.id}`, "📰", n.title, n.category))) +
+      grp("Competitions", r.leagues.map((l) => item(`/leagues/${l.id}`, compFlag(l), l.name, l.country)));
   }
 
   /* ---- Cookie consent (GDPR / AdSense expectation) ---- */
@@ -373,7 +385,7 @@ TG.ui = (function () {
     const bar = document.createElement("div");
     bar.className = "cookie-bar";
     bar.innerHTML = `
-      <span>We use cookies to keep you signed in, remember your preferences, and — where enabled — to help serve and measure ads. See our <a href="#/privacy">Privacy Policy</a>.</span>
+      <span>We use cookies to keep you signed in, remember your preferences, and — where enabled — to help serve and measure ads. See our <a href="/privacy">Privacy Policy</a>.</span>
       <span class="cb-actions">
         <button class="btn sm ghost" id="cb-no">Decline</button>
         <button class="btn sm" id="cb-yes">Accept</button>
