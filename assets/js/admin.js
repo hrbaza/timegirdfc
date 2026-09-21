@@ -609,14 +609,14 @@ TG.admin = (function () {
             <p style="margin:.2rem 0">${esc(c.text)}</p>
             <span class="help">on ${n ? `“${esc(n.title)}”` : "a post"} · ${U.timeAgo(c.createdAt)}</span></div>
           <div class="row-actions">
-            ${c.status !== "approved" ? `<button class="icn-btn" title="Approve" data-app="${c.id}">${icon("check")}</button>` : ""}
+            ${c.status !== "approved" ? `<button class="icn-btn" title="Approve" data-approve="${c.id}">${icon("check")}</button>` : ""}
             <button class="icn-btn" title="Flag" data-flag="${c.id}">🚩</button>
             <button class="icn-btn del" title="Delete" data-del="${c.id}">${icon("trash")}</button>
           </div></div>`;
       }).join("")}</div>` : `<div class="empty"><div class="ball">💬</div><p>No comments here.</p></div>`;
       const doMod = async (id, status, msg) => { try { await S.moderateComment(id, status); U.toast(msg, "ok"); draw(); } catch (e) { U.toast(e.message, "err"); } };
-      document.querySelectorAll("[data-app]").forEach((b) => b.onclick = () => doMod(b.dataset.app, "approved", "Approved"));
-      document.querySelectorAll("[data-flag]").forEach((b) => b.onclick = () => doMod(b.dataset.flag, "flagged", "Flagged"));
+      document.querySelectorAll("#cbody [data-approve]").forEach((b) => b.onclick = () => doMod(b.dataset.approve, "approved", "Approved"));
+      document.querySelectorAll("#cbody [data-flag]").forEach((b) => b.onclick = () => doMod(b.dataset.flag, "flagged", "Flagged"));
       document.querySelectorAll("#cbody [data-del]").forEach((b) => b.onclick = async () => { if (confirm("Delete this comment?")) { try { await S.remove("comments", b.dataset.del); U.toast("Deleted", "ok"); draw(); } catch (e) { U.toast(e.message, "err"); } } });
     }
     document.getElementById("cfilters").querySelectorAll(".pill").forEach((b) => b.onclick = () => {
