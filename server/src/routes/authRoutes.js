@@ -73,7 +73,4 @@ router.post(
 
 router.get("/me", protect, auth.getMe);
 
-// TEMPORARY email diagnostic — remove after debugging.
-router.get("/mail-check", auth.mailCheck);
-
 module.exports = router;
