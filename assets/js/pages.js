@@ -864,6 +864,7 @@ TG.pages = (function () {
         <form id="siform">
           <div class="field"><label>Email</label><input class="input" type="email" id="si-email" required></div>
           <div class="field"><label>Password</label><input class="input" type="password" id="si-pass" required></div>
+          <div style="text-align:right;margin:-.5rem 0 .8rem"><a href="/forgot" style="color:var(--primary);font-weight:600;font-size:.88rem">Forgot password?</a></div>
           <button class="btn block" type="submit">Sign In</button>
         </form>
         <div class="divider">or</div>
@@ -906,6 +907,84 @@ TG.pages = (function () {
       U.toast("Account created — welcome!", "ok");
       U.renderHeader(); U.setActiveNav(currentRoute()); U.go("/account");
     };
+  }
+
+  function forgot(app) {
+    if (S.currentUser()) { U.go("/account"); return; }
+    U.setMeta("Reset Password", "Reset your Time Grid FC password with a one-time code sent to your email.");
+    let step = 1, email = "", otp = "";
+    const draw = () => {
+      app.innerHTML = `
+        <section class="wrap auth-wrap"><div class="auth-card">
+          <div class="center" style="margin-bottom:1rem"><span class="ball" style="display:inline-block;width:44px">${U.ballSVG()}</span></div>
+          <h1 class="center">Reset password</h1>
+          <p class="center muted" style="margin-top:-.4rem" id="fp-sub"></p>
+          <div class="steps" style="display:flex;gap:.4rem;justify-content:center;margin:.2rem 0 1rem">
+            ${[1, 2, 3].map((s) => `<span style="width:26px;height:5px;border-radius:3px;background:${s <= step ? "var(--primary)" : "var(--border)"}"></span>`).join("")}
+          </div>
+          <div id="fp-body"></div>
+          <div class="divider">or</div>
+          <p class="center" style="margin:0"><a href="/signin" style="color:var(--primary);font-weight:700">Back to sign in</a></p>
+        </div></section>`;
+      document.getElementById("fp-sub").textContent =
+        step === 1 ? "Enter your account email to get a 6-digit code." :
+        step === 2 ? "Enter the 6-digit code sent to your email." :
+        "Choose a new password.";
+      const body = document.getElementById("fp-body");
+
+      if (step === 1) {
+        body.innerHTML = `<form id="fp1">
+          <div class="field"><label>Email</label><input class="input" type="email" id="fp-email" value="${esc(email)}" required></div>
+          <button class="btn block" type="submit">Send code</button></form>`;
+        document.getElementById("fp1").onsubmit = async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector("button"); btn.disabled = true;
+          email = document.getElementById("fp-email").value.trim();
+          const res = await S.forgotPassword(email); btn.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); return; }
+          U.toast("If that email exists, a code has been sent.", "ok");
+          if (res.devOtp) { otp = res.devOtp; U.toast("Dev code: " + res.devOtp, "ok"); }
+          step = 2; draw();
+        };
+      } else if (step === 2) {
+        body.innerHTML = `<form id="fp2">
+          <div class="field"><label>6-digit code</label><input class="input" id="fp-otp" inputmode="numeric" maxlength="6" value="${esc(otp)}" placeholder="••••••" autocomplete="one-time-code" required></div>
+          <button class="btn block" type="submit">Verify code</button></form>
+          <p class="center" style="margin:.8rem 0 0;font-size:.86rem"><a id="fp-resend" style="color:var(--primary);cursor:pointer">Resend code</a> · <a id="fp-back" style="color:var(--primary);cursor:pointer">Change email</a></p>`;
+        document.getElementById("fp2").onsubmit = async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector("button"); btn.disabled = true;
+          otp = document.getElementById("fp-otp").value.trim();
+          const res = await S.verifyResetOtp(email, otp); btn.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); return; }
+          step = 3; draw();
+        };
+        document.getElementById("fp-resend").onclick = async () => {
+          const res = await S.forgotPassword(email);
+          if (res.error) return U.toast(res.error, "err");
+          U.toast("New code sent.", "ok");
+          if (res.devOtp) { otp = res.devOtp; U.toast("Dev code: " + res.devOtp, "ok"); }
+        };
+        document.getElementById("fp-back").onclick = () => { step = 1; draw(); };
+      } else {
+        body.innerHTML = `<form id="fp3">
+          <div class="field"><label>New password</label><input class="input" type="password" id="fp-pass" minlength="6" required><span class="help">At least 6 characters.</span></div>
+          <div class="field"><label>Confirm password</label><input class="input" type="password" id="fp-pass2" minlength="6" required></div>
+          <button class="btn block" type="submit">Update password</button></form>`;
+        document.getElementById("fp3").onsubmit = async (e) => {
+          e.preventDefault();
+          const p1 = document.getElementById("fp-pass").value, p2 = document.getElementById("fp-pass2").value;
+          if (p1.length < 6) return U.toast("Password must be at least 6 characters", "err");
+          if (p1 !== p2) return U.toast("Passwords do not match", "err");
+          const btn = e.target.querySelector("button"); btn.disabled = true;
+          const res = await S.resetPassword(email, otp, p1); btn.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); if (/code/i.test(res.error)) { step = 2; draw(); } return; }
+          U.toast("Password updated — you're signed in", "ok");
+          U.renderHeader(); U.setActiveNav(""); U.go("/account");
+        };
+      }
+    };
+    draw();
   }
 
   function account(app) {
@@ -951,6 +1030,6 @@ TG.pages = (function () {
   return {
     home, news, newsPost, players, playersCountry, player, teams, team,
     schedule, leagues, league, worldcup, awards, award, transfers, videos,
-    about, contact, privacy, terms, signin, signup, account, notFound,
+    about, contact, privacy, terms, signin, signup, forgot, account, notFound,
   };
 })();

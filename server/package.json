@@ -12,7 +12,13 @@
     "seed:destroy": "node src/seed.js --destroy",
     "smoke": "node src/tests/smoke.js"
   },
-  "keywords": ["football", "api", "express", "mongodb", "mongoose"],
+  "keywords": [
+    "football",
+    "api",
+    "express",
+    "mongodb",
+    "mongoose"
+  ],
   "author": "Time Grid FC",
   "license": "MIT",
   "dependencies": {
@@ -26,7 +32,8 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "nodemailer": "^10.0.10"
   },
   "devDependencies": {
     "mongodb-memory-server": "^10.1.2",

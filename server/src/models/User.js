@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema(
       enum: ["Visitor", "Editor", "Admin"],
       default: "Visitor",
     },
+    // Password-reset OTP (hashed; never returned by default).
+    resetOtp: { type: String, select: false },
+    resetOtpExpires: { type: Date, select: false },
+    resetOtpAttempts: { type: Number, default: 0, select: false },
   },
   baseSchemaOptions
 );

@@ -316,6 +316,30 @@ TG.store = (function () {
   }
   function adminSignOut() { clearAdminSession(); }
 
+  /* ---- Password reset via email OTP (API mode only) ---- */
+  async function forgotPassword(email) {
+    if (MODE !== "api") return { error: "Password reset needs the live server (not available in offline demo)." };
+    try {
+      const res = await TG.api.request("/auth/forgot-password", { method: "POST", body: { email: (email || "").trim() } });
+      return { ok: true, message: res.message, devOtp: res.devOtp };
+    } catch (e) { return { error: e.message }; }
+  }
+  async function verifyResetOtp(email, otp) {
+    if (MODE !== "api") return { error: "Password reset needs the live server." };
+    try {
+      await TG.api.request("/auth/verify-reset-otp", { method: "POST", body: { email: (email || "").trim(), otp: (otp || "").trim() } });
+      return { ok: true };
+    } catch (e) { return { error: e.message }; }
+  }
+  async function resetPassword(email, otp, password) {
+    if (MODE !== "api") return { error: "Password reset needs the live server." };
+    try {
+      const res = await TG.api.request("/auth/reset-password", { method: "POST", body: { email: (email || "").trim(), otp: (otp || "").trim(), password } });
+      userToken = res.token; session.user = res.data; lsSet(USER_TOKEN, userToken); lsSet(USER_OBJ, JSON.stringify(res.data));
+      return { user: res.data };
+    } catch (e) { return { error: e.message }; }
+  }
+
   /* ================= comments (async writes) ================= */
   function commentsFor(postId, includeAll) {
     return all("comments").filter((c) => c.postId === postId && (includeAll || c.status === "approved"))
@@ -367,6 +391,7 @@ TG.store = (function () {
     fixturesToday, fixturesUpcoming, fixturesRecent,
     publishedNews, newsCategories, allTimeTable, worldCupTable,
     currentUser, signUp, signIn, signOut,
+    forgotPassword, verifyResetOtp, resetPassword,
     currentAdmin, adminSignIn, adminSignOut, refreshAdminData,
     commentsFor, addComment, moderateComment, pendingComments,
     getTheme, setTheme, search,

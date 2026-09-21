@@ -103,6 +103,7 @@
         case "terms": P.terms(app); break;
         case "signin": P.signin(app); break;
         case "signup": P.signup(app); break;
+        case "forgot": P.forgot(app); break;
         case "account": P.account(app); break;
         default: P.notFound(app);
       }

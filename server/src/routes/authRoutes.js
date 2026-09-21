@@ -44,6 +44,33 @@ router.post(
   auth.adminLogin
 );
 
+// Password reset via email OTP.
+router.post(
+  "/forgot-password",
+  authLimiter,
+  [body("email").isEmail().withMessage("Valid email is required").normalizeEmail()],
+  validate,
+  auth.forgotPassword
+);
+router.post(
+  "/verify-reset-otp",
+  authLimiter,
+  [body("email").isEmail().normalizeEmail(), body("otp").trim().notEmpty().withMessage("Code is required")],
+  validate,
+  auth.verifyResetOtp
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  [
+    body("email").isEmail().normalizeEmail(),
+    body("otp").trim().notEmpty().withMessage("Code is required"),
+    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  ],
+  validate,
+  auth.resetPassword
+);
+
 router.get("/me", protect, auth.getMe);
 
 module.exports = router;

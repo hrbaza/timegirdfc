@@ -47,6 +47,7 @@ const SIMPLE = {
   terms: ["Terms & Disclaimer", "Terms of use and disclaimer for Time Grid FC."],
   signin: ["Sign In", "Sign in to your Time Grid FC account."],
   signup: ["Create Account", "Join the Time Grid FC community."],
+  forgot: ["Reset Password", "Reset your Time Grid FC password with a one-time code sent to your email."],
   account: ["My Account", "Manage your Time Grid FC account."],
 };
 
