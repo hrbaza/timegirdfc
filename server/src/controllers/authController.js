@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { signToken } = require("../middleware/auth");
 const { AppError, catchAsync } = require("../utils/AppError");
-const { sendMail } = require("../utils/mailer");
+const { sendMail, verify: verifyMail } = require("../utils/mailer");
 
 const OTP_TTL_MIN = 10;      // code expires after 10 minutes
 const OTP_MAX_ATTEMPTS = 5;  // wrong-code attempts before a new code is required
@@ -140,4 +140,21 @@ const resetPassword = catchAsync(async (req, res, next) => {
   sendAuth(res, user, 200);                 // auto sign-in after reset
 });
 
-module.exports = { register, login, adminLogin, getMe, forgotPassword, verifyResetOtp, resetPassword };
+// GET /api/auth/mail-check  — TEMPORARY diagnostic (no secrets exposed).
+const mailCheck = catchAsync(async (req, res) => {
+  const status = {
+    nodeEnv: process.env.NODE_ENV || null,
+    hasHost: !!process.env.SMTP_HOST,
+    host: process.env.SMTP_HOST || null,
+    port: process.env.SMTP_PORT || null,
+    hasUser: !!process.env.SMTP_USER,
+    userPreview: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{2}).*(@.*)/, "$1***$2") : null,
+    hasPass: !!process.env.SMTP_PASS,
+    passLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+    from: process.env.MAIL_FROM || null,
+    smtp: await verifyMail(),
+  };
+  res.json(status);
+});
+
+module.exports = { register, login, adminLogin, getMe, forgotPassword, verifyResetOtp, resetPassword, mailCheck };

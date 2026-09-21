@@ -24,6 +24,14 @@ function getTransport() {
 
 function isConfigured() { return !!getTransport(); }
 
+// Test the SMTP connection + auth without sending an email (for diagnostics).
+async function verify() {
+  const t = getTransport();
+  if (!t) return { configured: false };
+  try { await t.verify(); return { configured: true, ok: true }; }
+  catch (e) { return { configured: true, ok: false, error: e.message }; }
+}
+
 async function sendMail({ to, subject, text, html }) {
   const t = getTransport();
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || "Time Grid FC <no-reply@timegridfc.com>";
@@ -35,4 +43,4 @@ async function sendMail({ to, subject, text, html }) {
   return { delivered: true, dev: false };
 }
 
-module.exports = { sendMail, isConfigured };
+module.exports = { sendMail, isConfigured, verify };
