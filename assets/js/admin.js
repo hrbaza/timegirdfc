@@ -266,9 +266,11 @@ TG.admin = (function () {
         <form id="alform">
           <div class="field"><label>Email</label><input class="input" type="email" id="al-email" required></div>
           <div class="field"><label>Password</label><input class="input" type="password" id="al-pass" required></div>
+          <div style="text-align:right;margin:-.5rem 0 .8rem"><a id="al-forgot" style="color:var(--primary);font-weight:600;font-size:.88rem;cursor:pointer">Forgot password?</a></div>
           <button class="btn block" type="submit">Sign in to Admin</button>
         </form>
       </div></section>`;
+    document.getElementById("al-forgot").onclick = () => renderAdminReset(app);
     document.getElementById("alform").onsubmit = async (e) => {
       e.preventDefault();
       const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true;
@@ -277,6 +279,78 @@ TG.admin = (function () {
       if (res.error) { U.toast(res.error, "err"); return; }
       U.toast("Welcome to the admin panel", "ok"); render(app, "dashboard");
     };
+  }
+
+  /* ---- admin password reset (email OTP) ---- */
+  function renderAdminReset(app) {
+    U.setMeta("Admin Login");
+    let step = 1, email = "", otp = "";
+    const draw = () => {
+      app.innerHTML = `
+        <section class="wrap auth-wrap"><div class="auth-card">
+          <div class="center" style="margin-bottom:.6rem;font-size:2rem">🔐</div>
+          <h1 class="center">Reset admin password</h1>
+          <p class="center muted" style="margin-top:-.4rem" id="ar-sub"></p>
+          <div class="steps" style="display:flex;gap:.4rem;justify-content:center;margin:.2rem 0 1rem">
+            ${[1, 2, 3].map((s) => `<span style="width:26px;height:5px;border-radius:3px;background:${s <= step ? "var(--primary)" : "var(--border)"}"></span>`).join("")}
+          </div>
+          <div id="ar-body"></div>
+          <div class="divider">or</div>
+          <p class="center" style="margin:0"><a id="ar-back" style="color:var(--primary);font-weight:700;cursor:pointer">Back to admin sign in</a></p>
+        </div></section>`;
+      document.getElementById("ar-sub").textContent =
+        step === 1 ? "Enter your admin email to get a 6-digit code." :
+        step === 2 ? "Enter the 6-digit code sent to your email." :
+        "Choose a new password.";
+      document.getElementById("ar-back").onclick = () => renderLogin(app);
+      const body = document.getElementById("ar-body");
+
+      if (step === 1) {
+        body.innerHTML = `<form id="ar1"><div class="field"><label>Email</label><input class="input" type="email" id="ar-email" value="${esc(email)}" required></div><button class="btn block" type="submit">Send code</button></form>`;
+        document.getElementById("ar1").onsubmit = async (e) => {
+          e.preventDefault();
+          const b = e.target.querySelector("button"); b.disabled = true;
+          email = document.getElementById("ar-email").value.trim();
+          const res = await S.forgotPassword(email); b.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); return; }
+          U.toast("If that email exists, a code has been sent.", "ok");
+          if (res.devOtp) { otp = res.devOtp; U.toast("Dev code: " + res.devOtp, "ok"); }
+          step = 2; draw();
+        };
+      } else if (step === 2) {
+        body.innerHTML = `<form id="ar2"><div class="field"><label>6-digit code</label><input class="input" id="ar-otp" inputmode="numeric" maxlength="6" value="${esc(otp)}" placeholder="••••••" autocomplete="one-time-code" required></div><button class="btn block" type="submit">Verify code</button></form>
+          <p class="center" style="margin:.8rem 0 0;font-size:.86rem"><a id="ar-resend" style="color:var(--primary);cursor:pointer">Resend code</a></p>`;
+        document.getElementById("ar2").onsubmit = async (e) => {
+          e.preventDefault();
+          const b = e.target.querySelector("button"); b.disabled = true;
+          otp = document.getElementById("ar-otp").value.trim();
+          const res = await S.verifyResetOtp(email, otp); b.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); return; }
+          step = 3; draw();
+        };
+        document.getElementById("ar-resend").onclick = async () => {
+          const res = await S.forgotPassword(email);
+          if (res.error) return U.toast(res.error, "err");
+          U.toast("New code sent.", "ok");
+          if (res.devOtp) { otp = res.devOtp; U.toast("Dev code: " + res.devOtp, "ok"); }
+        };
+      } else {
+        body.innerHTML = `<form id="ar3"><div class="field"><label>New password</label><input class="input" type="password" id="ar-pass" minlength="6" required><span class="help">At least 6 characters.</span></div>
+          <div class="field"><label>Confirm password</label><input class="input" type="password" id="ar-pass2" minlength="6" required></div>
+          <button class="btn block" type="submit">Update password</button></form>`;
+        document.getElementById("ar3").onsubmit = async (e) => {
+          e.preventDefault();
+          const p1 = document.getElementById("ar-pass").value, p2 = document.getElementById("ar-pass2").value;
+          if (p1.length < 6) return U.toast("Password must be at least 6 characters", "err");
+          if (p1 !== p2) return U.toast("Passwords do not match", "err");
+          const b = e.target.querySelector("button"); b.disabled = true;
+          const res = await S.resetPasswordForAdmin(email, otp, p1); b.disabled = false;
+          if (res.error) { U.toast(res.error, "err"); if (/code/i.test(res.error)) { step = 2; draw(); } return; }
+          U.toast("Password updated — welcome back", "ok"); render(app, "dashboard");
+        };
+      }
+    };
+    draw();
   }
 
   const notAllowed = () => `<div class="empty"><div class="ball">🔒</div><p>Your role doesn't have access to this module.</p></div>`;

@@ -339,6 +339,17 @@ TG.store = (function () {
       return { user: res.data };
     } catch (e) { return { error: e.message }; }
   }
+  // Reset + sign straight into the admin panel (Admin/Editor only).
+  async function resetPasswordForAdmin(email, otp, password) {
+    if (MODE !== "api") return { error: "Password reset needs the live server." };
+    try {
+      const res = await TG.api.request("/auth/reset-password", { method: "POST", body: { email: (email || "").trim(), otp: (otp || "").trim(), password } });
+      if (res.data.role !== "Admin" && res.data.role !== "Editor") return { error: "Password updated, but this account has no admin access." };
+      adminToken = res.token; session.admin = res.data; lsSet(ADMIN_TOKEN, adminToken); lsSet(ADMIN_OBJ, JSON.stringify(res.data));
+      await refreshAdminData();
+      return { user: res.data };
+    } catch (e) { return { error: e.message }; }
+  }
 
   /* ================= comments (async writes) ================= */
   function commentsFor(postId, includeAll) {
@@ -391,7 +402,7 @@ TG.store = (function () {
     fixturesToday, fixturesUpcoming, fixturesRecent,
     publishedNews, newsCategories, allTimeTable, worldCupTable,
     currentUser, signUp, signIn, signOut,
-    forgotPassword, verifyResetOtp, resetPassword,
+    forgotPassword, verifyResetOtp, resetPassword, resetPasswordForAdmin,
     currentAdmin, adminSignIn, adminSignOut, refreshAdminData,
     commentsFor, addComment, moderateComment, pendingComments,
     getTheme, setTheme, search,
