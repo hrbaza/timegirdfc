@@ -129,9 +129,11 @@ TG.store = (function () {
 
   async function init() {
     db = emptyDB();
-    // Quick attempt: if the API answers fast, use live data immediately.
+    // Wait for live data first (covers most serverless cold starts) so a fresh
+    // page never shows stale offline-seed content. Only fall back to the seed if
+    // the API is genuinely slow/unreachable, then hydrate in the background.
     let boot = null;
-    try { boot = TG.api && (await TG.api.request("/bootstrap", { timeout: 3500 })); } catch (e) { boot = null; }
+    try { boot = TG.api && (await TG.api.request("/bootstrap", { timeout: 7000 })); } catch (e) { boot = null; }
     if (boot && boot.data) {
       hydrated = true;
       await applyApiBoot(boot);

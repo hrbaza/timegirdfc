@@ -76,8 +76,9 @@ if (clientDirEnv) {
     try {
       const html = await renderPage(req, clientDir);
       res.set("Content-Type", "text/html; charset=utf-8");
-      // Let Vercel's CDN cache the rendered HTML briefly (fast + still fresh).
-      res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+      // Let Vercel's CDN cache the rendered HTML briefly (fast) but stay fresh so
+      // new/edited posts show quickly. The client also re-hydrates from the API.
+      res.set("Cache-Control", "public, max-age=0, s-maxage=20, stale-while-revalidate=40");
       res.send(html);
     } catch (e) {
       console.error("SSR error:", e.message);
