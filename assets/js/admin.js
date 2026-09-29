@@ -36,7 +36,7 @@ TG.admin = (function () {
         { n: "title", l: "Title", t: "text", req: true },
         { n: "category", l: "Category", t: "select", opts: () => S.newsCategories().map((c) => ({ v: c, l: c })) },
         { n: "excerpt", l: "Excerpt / summary", t: "textarea", help: "Short summary shown on cards and used as a fallback SEO description." },
-        { n: "body", l: "Body (HTML allowed)", t: "textarea", big: true, help: "Use <p>, <h2>, <h3>, <ul>, <blockquote>. Aim for 600+ words with clear headings for SEO." },
+        { n: "body", l: "Body (HTML allowed)", t: "textarea", big: true, toolbar: true, help: "Select a word and click 🔗 Link to make it clickable. Aim for 600+ words with clear headings for SEO." },
         { n: "metaDescription", l: "SEO meta description", t: "textarea", help: "~150–160 characters. Shown in Google results. Falls back to the excerpt if empty." },
         { n: "keywords", l: "SEO keywords", t: "csv", help: "Comma-separated focus keywords." },
         { n: "cover", l: "Cover image", t: "image" },
@@ -475,7 +475,15 @@ TG.admin = (function () {
     const id = "fld-" + f.n;
     let control;
     if (f.t === "textarea" || f.t === "json") {
-      control = `<textarea class="textarea" id="${id}" ${f.big ? 'style="min-height:180px"' : ""} ${f.t === "json" ? 'style="font-family:monospace;font-size:.85rem;min-height:120px"' : ""}>${esc(val)}</textarea>`;
+      const tb = f.toolbar ? `<div class="editor-toolbar" data-for="${id}" style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.4rem">
+        <button type="button" class="btn ghost sm" data-cmd="link" title="Insert a link on the selected word">🔗 Link</button>
+        <button type="button" class="btn ghost sm" data-cmd="bold" title="Bold"><b>B</b></button>
+        <button type="button" class="btn ghost sm" data-cmd="italic" title="Italic"><i>I</i></button>
+        <button type="button" class="btn ghost sm" data-cmd="h2" title="Heading">H2</button>
+        <button type="button" class="btn ghost sm" data-cmd="ul" title="Bullet list">• List</button>
+        <button type="button" class="btn ghost sm" data-cmd="quote" title="Quote">❝ Quote</button>
+      </div>` : "";
+      control = tb + `<textarea class="textarea" id="${id}" ${f.big ? 'style="min-height:180px"' : ""} ${f.t === "json" ? 'style="font-family:monospace;font-size:.85rem;min-height:120px"' : ""}>${esc(val)}</textarea>`;
     } else if (f.t === "select") {
       const opts = f.opts().map((o) => `<option value="${esc(o.v)}" ${String(o.v) === String(val) ? "selected" : ""}>${esc(o.l)}</option>`).join("");
       control = `<select class="select" id="${id}">${opts}</select>`;
@@ -488,6 +496,35 @@ TG.admin = (function () {
       control = `<input class="input" id="${id}" type="${type}" value="${esc(val)}" ${f.req ? "required" : ""}>`;
     }
     return `<div class="field"><label>${f.l}${f.req ? ' <span style="color:var(--red-500)">*</span>' : ""}</label>${control}${f.help ? `<span class="help">${esc(f.help)}</span>` : ""}</div>`;
+  }
+
+  // Wrap the current textarea selection with HTML tags (rich-text toolbar).
+  function applyEditorCmd(ta, cmd) {
+    if (!ta) return;
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const val = ta.value, sel = val.slice(s, e);
+    let before = "", after = "", text = sel;
+    if (cmd === "link") {
+      let url = prompt("Link kis URL par jaye? (jaise https://www.timegridfc.com/player/p-messi)", "https://");
+      if (!url) return;
+      url = url.trim();
+      if (!/^(https?:\/\/|\/)/i.test(url)) url = "https://" + url;
+      text = sel || (prompt("Link ka text (jo word dikhega):", "") || url);
+      const external = /^https?:\/\//i.test(url);
+      before = `<a href="${url}"${external ? ' target="_blank" rel="noopener"' : ""}>`;
+      after = "</a>";
+    } else if (cmd === "bold") { before = "<strong>"; after = "</strong>"; text = sel || "bold text"; }
+    else if (cmd === "italic") { before = "<em>"; after = "</em>"; text = sel || "italic text"; }
+    else if (cmd === "h2") { before = "<h2>"; after = "</h2>"; text = sel || "Heading"; }
+    else if (cmd === "quote") { before = "<blockquote>"; after = "</blockquote>"; text = sel || "Quote"; }
+    else if (cmd === "ul") {
+      const items = (sel || "First item\nSecond item").split("\n").map((x) => x.trim()).filter(Boolean).map((x) => `  <li>${x}</li>`).join("\n");
+      before = "<ul>\n"; text = items; after = "\n</ul>";
+    } else return;
+    ta.value = val.slice(0, s) + before + text + after + val.slice(e);
+    ta.focus();
+    ta.selectionStart = s + before.length;
+    ta.selectionEnd = s + before.length + text.length;
   }
 
   function openForm(key, row) {
@@ -513,6 +550,12 @@ TG.admin = (function () {
     back.querySelector("#m-close").onclick = close;
     back.querySelector("#m-cancel").onclick = close;
     back.onclick = (e) => { if (e.target === back) close(); };
+
+    // wire rich-text toolbars (Link / Bold / Heading / List / Quote)
+    back.querySelectorAll(".editor-toolbar").forEach((tb) => {
+      const ta = back.querySelector("#" + tb.dataset.for);
+      tb.querySelectorAll("[data-cmd]").forEach((btn) => btn.onclick = () => applyEditorCmd(ta, btn.dataset.cmd));
+    });
 
     // wire image file inputs → auto-resize/compress → dataURL into the URL input
     fields.filter((f) => f.t === "image").forEach((f) => {
