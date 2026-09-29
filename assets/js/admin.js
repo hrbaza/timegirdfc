@@ -12,7 +12,7 @@ TG.admin = (function () {
   // page admin.html (data-app="admin", routes are #/<section>).
   const STANDALONE = typeof document !== "undefined" && document.body && document.body.getAttribute("data-app") === "admin";
   const secHref = (k) => (STANDALONE ? "#/" + k : "#/admin/" + k);
-  const siteHref = STANDALONE ? "index.html" : "#/";
+  const siteHref = STANDALONE ? "/" : "#/";
 
   const POS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
   const opt = {

@@ -209,13 +209,13 @@ TG.ui = (function () {
     el.innerHTML = `
       <nav class="nav">
         <div class="nav-inner">
-          <a href="index.html" class="brand" aria-label="Time Grid FC home">
+          <a href="/" class="brand" aria-label="Time Grid FC home">
             <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC <span class="chip" style="margin-left:.2rem">Admin</span>
           </a>
           <div style="flex:1"></div>
           <div class="nav-actions">
             <button class="icon-btn" id="tg-theme-btn" aria-label="Toggle theme" title="Toggle theme">${theme === "dark" ? I.sun : I.moon}</button>
-            <a class="btn sm ghost" href="index.html" style="height:40px">🌐 View site</a>
+            <a class="btn sm ghost" href="/" style="height:40px">🌐 View site</a>
           </div>
         </div>
       </nav>`;
