@@ -29,6 +29,16 @@ function clip(s, n) {
   s = String(s || "").replace(/\s+/g, " ").trim();
   return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
 }
+// Inline Markdown links [text](url) -> real <a> links (matches the client).
+function linkify(html) {
+  return String(html == null ? "" : html).replace(
+    /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
+    (m, text, url) => {
+      const external = /^https?:\/\//i.test(url);
+      return `<a href="${url}"${external ? ' target="_blank" rel="noopener"' : ""}>${text}</a>`;
+    }
+  );
+}
 
 /* ---- static meta for list / info pages ---- */
 const SIMPLE = {
@@ -130,7 +140,7 @@ function articleContent(n) {
   try { dateStr = new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) {}
   const cover = n.cover ? `<figure class="cover"><img src="${esc(n.cover)}" alt="${esc(n.title)}"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
-  const body = n.body || `<p>${esc(n.excerpt || "")}</p>`; // authored HTML (trusted)
+  const body = linkify(n.body || `<p>${esc(n.excerpt || "")}</p>`); // authored HTML (trusted)
   return `<article class="wrap section article">
       <span class="badge-cat">${esc(n.category || "")}</span>
       <h1>${esc(n.title)}</h1>

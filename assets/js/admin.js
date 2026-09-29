@@ -36,7 +36,7 @@ TG.admin = (function () {
         { n: "title", l: "Title", t: "text", req: true },
         { n: "category", l: "Category", t: "select", opts: () => S.newsCategories().map((c) => ({ v: c, l: c })) },
         { n: "excerpt", l: "Excerpt / summary", t: "textarea", help: "Short summary shown on cards and used as a fallback SEO description." },
-        { n: "body", l: "Body (HTML allowed)", t: "textarea", big: true, toolbar: true, help: "Select a word and click 🔗 Link to make it clickable. Aim for 600+ words with clear headings for SEO." },
+        { n: "body", l: "Body (HTML allowed)", t: "textarea", big: true, toolbar: true, help: "Add a link inline like [Messi](https://…) — it auto-becomes an underlined clickable link. Or select a word and click 🔗 Link. Aim for 600+ words with clear headings for SEO." },
         { n: "metaDescription", l: "SEO meta description", t: "textarea", help: "~150–160 characters. Shown in Google results. Falls back to the excerpt if empty." },
         { n: "keywords", l: "SEO keywords", t: "csv", help: "Comma-separated focus keywords." },
         { n: "cover", l: "Cover image", t: "image" },
@@ -510,9 +510,8 @@ TG.admin = (function () {
       url = url.trim();
       if (!/^(https?:\/\/|\/)/i.test(url)) url = "https://" + url;
       text = sel || (prompt("Link ka text (jo word dikhega):", "") || url);
-      const external = /^https?:\/\//i.test(url);
-      before = `<a href="${url}"${external ? ' target="_blank" rel="noopener"' : ""}>`;
-      after = "</a>";
+      // Markdown link — auto-becomes an underlined clickable link on the article.
+      before = "["; after = `](${url})`;
     } else if (cmd === "bold") { before = "<strong>"; after = "</strong>"; text = sel || "bold text"; }
     else if (cmd === "italic") { before = "<em>"; after = "</em>"; text = sel || "italic text"; }
     else if (cmd === "h2") { before = "<h2>"; after = "</h2>"; text = sel || "Heading"; }

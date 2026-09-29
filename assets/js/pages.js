@@ -202,6 +202,18 @@ TG.pages = (function () {
     render();
   }
 
+  // Turn inline Markdown links [text](url) into real, underlined <a> links.
+  // Lets writers embed a link right inside the sentence, e.g. [Messi](/player/p-messi).
+  function linkify(html) {
+    return String(html == null ? "" : html).replace(
+      /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
+      (m, text, url) => {
+        const external = /^https?:\/\//i.test(url);
+        return `<a href="${url}"${external ? ' target="_blank" rel="noopener"' : ""}>${text}</a>`;
+      }
+    );
+  }
+
   /* ---- NEWS post + comments (FR-2, FR-11) — SEO/AdSense-optimised article ---- */
   function readingTime(html) {
     const words = (html || "").replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
@@ -220,7 +232,7 @@ TG.pages = (function () {
     const updated = n.updatedAt && n.updatedAt !== n.publishedAt;
 
     // Add ids to <h2> headings and build a table of contents (router-safe anchors).
-    let bodyHtml = n.body || `<p>${esc(n.excerpt || "")}</p>`;
+    let bodyHtml = linkify(n.body) || `<p>${esc(n.excerpt || "")}</p>`;
     let toc = "";
     try {
       const tmp = document.createElement("div"); tmp.innerHTML = bodyHtml;
