@@ -17,6 +17,7 @@ const router = express.Router();
 router.get("/health", misc.health);
 router.get("/search", misc.search);
 router.get("/bootstrap", misc.bootstrap);
+router.get("/media/:col/:id/:field", misc.media); // serve stored images (keeps base64 out of JSON)
 
 // Auth & custom resources
 router.use("/auth", require("./authRoutes"));

@@ -71,7 +71,7 @@ async function buildMeta(seg) {
 
   try {
     if (r === "news" && id) {
-      const n = await News.findById(id).lean();
+      const n = await News.findById(id).select("-bodyImage1 -bodyImage2").lean();
       if (n && n.status === "published") return articleMeta(n);
     } else if (r === "player" && id) {
       const p = await Player.findById(id).lean();
@@ -110,11 +110,21 @@ async function buildMeta(seg) {
   return M;
 }
 
+// Base64 images live in Mongo; expose them as absolute media URLs (never embed
+// the base64 in the HTML / og:image).
+function mediaUrl(col, id, field, val) {
+  if (!val) return "";
+  if (/^https?:\/\//i.test(val)) return val;
+  if (/^data:/i.test(val)) return `${CANONICAL_BASE}/api/media/${col}/${id}/${field}`;
+  return val;
+}
+
 function articleMeta(n) {
   const desc = clip(n.metaDescription || n.excerpt || "", 160);
+  const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
   const M = {
-    title: n.title, desc, type: "article", image: n.cover || "",
-    content: articleContent(n),
+    title: n.title, desc, type: "article", image: coverUrl,
+    content: articleContent(n, coverUrl),
     article: { published: n.publishedAt, modified: n.updatedAt || n.publishedAt, section: n.category },
   };
   M.jsonLd = {
@@ -122,7 +132,7 @@ function articleMeta(n) {
     "@type": "NewsArticle",
     "headline": n.title,
     "description": desc,
-    "image": n.cover ? [n.cover] : undefined,
+    "image": coverUrl ? [coverUrl] : undefined,
     "datePublished": n.publishedAt,
     "dateModified": n.updatedAt || n.publishedAt,
     "author": { "@type": "Organization", "name": n.author || SITE },
@@ -135,10 +145,11 @@ function articleMeta(n) {
 }
 
 // Minimal server-rendered article so crawlers read the content without JS.
-function articleContent(n) {
+function articleContent(n, coverUrl) {
   let dateStr = "";
   try { dateStr = new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) {}
-  const cover = n.cover ? `<figure class="cover"><img src="${esc(n.cover)}" alt="${esc(n.title)}"></figure>` : "";
+  const cu = coverUrl != null ? coverUrl : mediaUrl("news", n._id, "cover", n.cover);
+  const cover = cu ? `<figure class="cover"><img src="${esc(cu)}" alt="${esc(n.title)}"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
   const body = linkify(n.body || `<p>${esc(n.excerpt || "")}</p>`); // authored HTML (trusted)
   return `<article class="wrap section article">
