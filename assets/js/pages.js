@@ -745,7 +745,7 @@ TG.pages = (function () {
           <h2>Media &amp; image credits</h2>
           <p>Player photographs are sourced from <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a> under their respective Creative Commons licences; editorial and cover imagery is provided by <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> under the Unsplash licence; country flags are from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn</a>. Video thumbnails belong to their respective owners and are shown only to link viewers to the original videos on YouTube.</p>
           <h2>Contact</h2>
-          <p>Have a story tip, a correction, or a question? Visit our <a href="/contact">Contact page</a> or reach us any time at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a>.</p>
+          <p>Have a story tip, a correction, or a question? Visit our <a href="/contact">Contact page</a> or reach us any time at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
         </div>
       </section>`;
   }
@@ -760,7 +760,7 @@ TG.pages = (function () {
         <h1>Get in touch</h1>
         <div class="content">
           <p>We'd love to hear from you — whether it's a story tip, a correction to something we've published, feedback on the site, or a general enquiry.</p>
-          <p><b>Email:</b> <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a><br>
+          <p><b>Email:</b> <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a><br>
              <b>YouTube:</b> <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">@timegrid_fc</a></p>
           <p>Or send us a message directly:</p>
         </div>
@@ -820,7 +820,7 @@ TG.pages = (function () {
           <p>We may update this Privacy Policy from time to time. Changes will be posted on this page with a revised "last updated" date.</p>
 
           <h2>Contact</h2>
-          <p>Questions about this policy? Email us at <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a> or use our <a href="/contact">Contact page</a>.</p>
+          <p>Questions about this policy? Email us at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a> or use our <a href="/contact">Contact page</a>.</p>
         </div>
       </section>`;
   }
@@ -857,7 +857,7 @@ TG.pages = (function () {
           <p>We may update these terms at any time; continued use of the site constitutes acceptance of the revised terms.</p>
 
           <h2>Contact</h2>
-          <p>Questions? Email <a href="mailto:contact@timegridfc.com">contact@timegridfc.com</a>.</p>
+          <p>Questions? Email <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
         </div>
       </section>`;
   }
