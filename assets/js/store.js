@@ -254,6 +254,26 @@ TG.store = (function () {
       .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
   }
   function newsCategories() { return ["Match Analysis", "Player Analysis", "Transfer News", "General Football News", "World Cup News"]; }
+  // Fetch a single article by id. Returns {article} on success, {notFound:true}
+  // ONLY on a real server 404, and {error} on a network/timeout (so the caller
+  // can preserve server-rendered content instead of showing "not found").
+  async function fetchArticle(id) {
+    if (MODE !== "api") {
+      const n = find("news", id);
+      return n ? { article: n } : { error: "offline" }; // offline ≠ doesn't exist
+    }
+    try {
+      const res = await TG.api.request("/news/" + id, { timeout: 12000 });
+      const n = res && res.data;
+      if (!n) return { notFound: true };
+      const i = (db.news || []).findIndex((x) => x.id === id);
+      if (i !== -1) db.news[i] = n; else (db.news = db.news || []).push(n);
+      return { article: n };
+    } catch (e) {
+      if (e && e.status === 404) return { notFound: true };
+      return { error: e ? e.message : "network" };
+    }
+  }
   function allTimeTable(lg) {
     const counts = {};
     (lg.champions || []).forEach((c) => { counts[c.team] = (counts[c.team] || 0) + 1; });
@@ -406,7 +426,7 @@ TG.store = (function () {
     team, player, league, award, country, news1,
     playersByCountry, squad, countriesWithPlayers, awardsForPlayer,
     fixturesToday, fixturesUpcoming, fixturesRecent,
-    publishedNews, newsCategories, allTimeTable, worldCupTable,
+    publishedNews, newsCategories, allTimeTable, worldCupTable, fetchArticle,
     currentUser, signUp, signIn, signOut,
     forgotPassword, verifyResetOtp, resetPassword, resetPasswordForAdmin,
     currentAdmin, adminSignIn, adminSignOut, refreshAdminData,

@@ -1,6 +1,16 @@
 const News = require("../models/News");
 const { AppError, catchAsync } = require("../utils/AppError");
 
+// Base64 images stay in Mongo but never travel in JSON — expose them as
+// lightweight /api/media/... URLs (external URLs pass through unchanged).
+function toMediaUrls(doc) {
+  const o = doc.toJSON ? doc.toJSON() : doc;
+  ["cover", "bodyImage1", "bodyImage2"].forEach((f) => {
+    if (o[f] && /^data:/i.test(o[f])) o[f] = `/api/media/news/${o.id || o._id}/${f}`;
+  });
+  return o;
+}
+
 // GET /api/news  (public: published only, category filter, pagination)
 const getPublished = catchAsync(async (req, res) => {
   const filter = { status: "published" };
@@ -28,7 +38,7 @@ const getOne = catchAsync(async (req, res, next) => {
   if (!doc) return next(new AppError("Article not found.", 404));
   const isStaff = req.user && (req.user.role === "Admin" || req.user.role === "Editor");
   if (doc.status !== "published" && !isStaff) return next(new AppError("Article not found.", 404));
-  res.json({ status: "success", data: doc });
+  res.json({ status: "success", data: isStaff ? doc : toMediaUrls(doc) });
 });
 
 module.exports = { getPublished, getAllAdmin, getOne };

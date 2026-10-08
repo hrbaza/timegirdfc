@@ -71,8 +71,23 @@ async function buildMeta(seg) {
 
   try {
     if (r === "news" && id) {
-      const n = await News.findById(id).select("-bodyImage1 -bodyImage2").lean();
+      let n = null, dbOk = false;
+      for (let a = 0; a < 3 && !dbOk; a++) {
+        try { n = await News.findById(id).select("-bodyImage1 -bodyImage2").lean(); dbOk = true; }
+        catch (e) { await new Promise((rz) => setTimeout(rz, 150)); }
+      }
       if (n && n.status === "published") return articleMeta(n);
+      if (dbOk) {
+        // DB answered and there is no published article with this id → real 404
+        // (a 200 "Article not found" would be a Soft 404 to Google).
+        return {
+          httpStatus: 404, title: "Article Not Found", type: "website", image: "",
+          desc: "This article could not be found. Browse the latest football news on Time Grid FC.",
+          content: `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>Article not found.</p><p class="help"><a href="/news">← Back to all news</a></p></div></section>`,
+        };
+      }
+      // DB error after retries — do NOT 404 a possibly-valid article; fall through
+      // to soft "News & Blog" meta (200) and let the client hydrate.
     } else if (r === "player" && id) {
       const p = await Player.findById(id).lean();
       if (p) {
@@ -221,7 +236,7 @@ async function renderPage(req, clientDir) {
   const canonicalUrl = CANONICAL_BASE + (urlPath === "/" ? "/" : urlPath);
   let html = injectHead(template, M, canonicalUrl);
   html = html.replace("<!--SSR_CONTENT-->", M.content || "");
-  return html;
+  return { html, status: M.httpStatus || 200 };
 }
 
 module.exports = { renderPage };

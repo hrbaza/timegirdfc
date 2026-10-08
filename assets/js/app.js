@@ -117,7 +117,10 @@
   async function boot() {
     U.applyTheme(S.getTheme());
     const app = document.getElementById("tg-app");
-    app.innerHTML = `<div class="loader"><div class="ball">⚽</div></div>`;
+    // Preserve any server-rendered content (e.g. an article) so crawlers that
+    // execute JS keep seeing it even if the data layer is slow. Only show a
+    // loader when the shell is empty (home / list pages have no SSR content).
+    if (!app.firstElementChild) app.innerHTML = `<div class="loader"><div class="ball">⚽</div></div>`;
 
     await S.init();
     console.log(`[Time Grid FC] data mode: ${S.mode()}${S.isApi() ? " (MongoDB backend)" : " (offline localStorage demo)"}`);

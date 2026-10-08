@@ -219,10 +219,23 @@ TG.pages = (function () {
     const words = (html || "").replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.round(words / 200));
   }
-  function newsPost(app, params) {
-    const n = S.news1(params.id);
-    if (!n || n.status !== "published") { app.innerHTML = `<section class="wrap section">${empty("Article not found.")}</section>`; return; }
+  async function newsPost(app, params) {
+    let n = S.news1(params.id);
+    if (!n) {
+      // Not in this browser's cache (brand-new article, or bootstrap not loaded
+      // yet). Fetch it by id. CRUCIAL for SEO: on a network/timeout failure we
+      // must NEVER clobber the server-rendered article — doing so made Google's
+      // renderer see "Article not found" and flag the page as a Soft 404.
+      const res = await S.fetchArticle(params.id);
+      if (res && res.article) n = res.article;
+      else if (res && res.notFound) { app.innerHTML = `<section class="wrap section">${empty("Article not found.")}</section>`; return; }
+      else { if (!app.querySelector(".article")) app.innerHTML = `<section class="wrap section"><div class="loader"><div class="ball">⚽</div></div></section>`; return; }
+    }
+    if (n.status && n.status !== "published") { app.innerHTML = `<section class="wrap section">${empty("Article not found.")}</section>`; return; }
+    renderArticle(app, n);
+  }
 
+  function renderArticle(app, n) {
     // Full SEO: title, meta description, Open Graph, Twitter, canonical, JSON-LD (schema.org).
     U.setArticleSEO(n);
 

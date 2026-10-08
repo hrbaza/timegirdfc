@@ -74,12 +74,14 @@ if (clientDirEnv) {
   const { renderPage } = require("./ssr");
   app.get("*", async (req, res) => {
     try {
-      const html = await renderPage(req, clientDir);
+      const { html, status } = await renderPage(req, clientDir);
       res.set("Content-Type", "text/html; charset=utf-8");
       // Let Vercel's CDN cache the rendered HTML briefly (fast) but stay fresh so
       // new/edited posts show quickly. The client also re-hydrates from the API.
-      res.set("Cache-Control", "public, max-age=0, s-maxage=20, stale-while-revalidate=40");
-      res.send(html);
+      // A genuine 404 is returned as a real 404 (never a Soft 404) and not cached.
+      if (status === 404) res.set("Cache-Control", "no-store");
+      else res.set("Cache-Control", "public, max-age=0, s-maxage=20, stale-while-revalidate=40");
+      res.status(status || 200).send(html);
     } catch (e) {
       console.error("SSR error:", e.message);
       // Last-resort: serve the shell so the SPA still boots (client renders all).
