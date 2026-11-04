@@ -339,15 +339,16 @@ table.tg tr:last-child td{ border-bottom:none; }
 
 /* Tabs / filters */
 .filters{ display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.2rem; }
-.pill{ padding:.45rem .9rem; border-radius:999px; border:1px solid var(--border-strong); background:var(--surface); cursor:pointer; font-weight:600; font-size:.86rem; transition:.15s var(--ease); color:var(--text-soft); }
+.pill{ padding:.45rem .9rem; border-radius:999px; border:1px solid var(--border-strong); background:var(--surface); cursor:pointer; font-weight:600; font-size:.86rem; transition:.15s var(--ease); color:var(--text-soft); text-decoration:none; }
 .pill:hover{ border-color:var(--primary); color:var(--text); }
 .pill.active{ background:var(--primary); color:#04140b; border-color:var(--primary); }
 :root[data-theme="light"] .pill.active{ color:#fff; }
 
 /* Pagination */
-.pager{ display:flex; gap:.4rem; justify-content:center; margin-top:1.6rem; }
-.pager button{ min-width:40px; height:40px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); cursor:pointer; font-weight:700; color:var(--text); }
-.pager button.active{ background:var(--primary); color:#04140b; border-color:var(--primary); }
+.pager{ display:flex; gap:.4rem; justify-content:center; flex-wrap:wrap; margin-top:1.6rem; }
+.pager a,.pager button{ min-width:40px; height:40px; padding:0 .55rem; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); cursor:pointer; font-weight:700; color:var(--text); text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+.pager a:hover,.pager button:hover{ border-color:var(--primary); }
+.pager a.active,.pager button.active{ background:var(--primary); color:#04140b; border-color:var(--primary); }
 .pager button:disabled{ opacity:.4; cursor:not-allowed; }
 
 /* Breadcrumb */

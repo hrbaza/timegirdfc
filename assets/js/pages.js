@@ -28,13 +28,23 @@ TG.pages = (function () {
   }
   function empty(msg) { return `<div class="empty"><div class="ball">⚽</div><p>${esc(msg)}</p></div>`; }
 
+  // Excerpt/summary: use the article's excerpt, else derive from the first ~160
+  // characters of the body so cards & meta descriptions are never empty.
+  function summary(n, len) {
+    len = len || 160;
+    const s = (n.excerpt || "").trim();
+    if (s) return s;
+    const text = String(n.body || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return text.length > len ? text.slice(0, len - 1).trimEnd() + "…" : text;
+  }
+
   /* ---- card renderers ---- */
   function newsCard(n) {
     return `<a class="card reveal" href="/news/${n.id}">
       <div class="thumb">${thumb(n.category, n.cover)}<span class="tag chip">${esc(n.category)}</span></div>
       <div class="pad">
         <h3>${esc(n.title)}</h3>
-        <p class="muted" style="font-size:.9rem;margin:0">${esc(n.excerpt || "")}</p>
+        <p class="muted" style="font-size:.9rem;margin:0">${esc(summary(n))}</p>
         <div class="meta">${esc(n.author)} · ${U.timeAgo(n.publishedAt)}</div>
       </div></a>`;
   }
@@ -152,39 +162,40 @@ TG.pages = (function () {
      NEWS listing (FR-2) — filters + pagination
      ======================================================================= */
   function news(app) {
-    U.setMeta("News & Blog", "The latest football news, match analysis, and player breakdowns from Time Grid FC.");
-    let cat = "All", page = 1; const SIZE = 9;
+    // Page + category come from the URL (?page=N&cat=X) so every page is a real,
+    // crawlable link. The global click interceptor turns clicks into SPA nav.
+    const qp = new URLSearchParams(location.search);
+    let cat = qp.get("cat") || "All";
+    let page = Math.max(1, parseInt(qp.get("page"), 10) || 1);
+    const SIZE = 12;
     const cats = ["All", ...S.newsCategories()];
+    U.setMeta("News & Blog" + (page > 1 ? ` — page ${page}` : ""), "The latest football news, match analysis, and player breakdowns from Time Grid FC.");
+
+    let list = S.publishedNews();
+    if (cat !== "All") list = list.filter((n) => n.category === cat);
+    const pages = Math.max(1, Math.ceil(list.length / SIZE));
+    if (page > pages) page = pages;
+    const slice = list.slice((page - 1) * SIZE, page * SIZE);
+
+    const catHref = (c) => (c === "All" ? "/news" : `/news?cat=${encodeURIComponent(c)}`);
+    const pageHref = (p) => `/news?page=${p}${cat !== "All" ? "&cat=" + encodeURIComponent(cat) : ""}`;
+    const filters = cats.map((c) => `<a class="pill${c === cat ? " active" : ""}" href="${catHref(c)}">${esc(c)}</a>`).join("");
+    let pager = "";
+    if (pages > 1) {
+      let nums = "";
+      for (let p = 1; p <= pages; p++) nums += `<a class="${p === page ? "active" : ""}" href="${pageHref(p)}">${p}</a>`;
+      pager = `${page > 1 ? `<a href="${pageHref(page - 1)}" rel="prev" aria-label="Previous page">‹</a>` : ""}${nums}${page < pages ? `<a href="${pageHref(page + 1)}" rel="next" aria-label="Next page">›</a>` : ""}`;
+    }
+
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["News"]])}
-        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h2>Football News</h2></div></div>
-        <div class="filters" id="news-filters">${cats.map((c) => `<button class="pill${c === "All" ? " active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-        <div class="grid cols-3" id="news-grid"></div>
-        <div class="pager" id="news-pager"></div>
+        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h1>Football News</h1></div></div>
+        <div class="filters" id="news-filters">${filters}</div>
+        <div class="grid cols-3" id="news-grid">${slice.length ? slice.map(newsCard).join("") : empty("No posts in this category yet.")}</div>
+        <nav class="pager" id="news-pager" aria-label="Pagination">${pager}</nav>
       </section>`;
-    function render() {
-      let list = S.publishedNews();
-      if (cat !== "All") list = list.filter((n) => n.category === cat);
-      const pages = Math.max(1, Math.ceil(list.length / SIZE));
-      if (page > pages) page = pages;
-      const slice = list.slice((page - 1) * SIZE, page * SIZE);
-      const grid = document.getElementById("news-grid");
-      grid.innerHTML = slice.length ? slice.map(newsCard).join("") : empty("No posts in this category yet.");
-      const pager = document.getElementById("news-pager");
-      pager.innerHTML = pages > 1 ? (
-        `<button ${page === 1 ? "disabled" : ""} data-p="${page - 1}">‹</button>` +
-        Array.from({ length: pages }, (_, i) => `<button class="${i + 1 === page ? "active" : ""}" data-p="${i + 1}">${i + 1}</button>`).join("") +
-        `<button ${page === pages ? "disabled" : ""} data-p="${page + 1}">›</button>`
-      ) : "";
-      pager.querySelectorAll("button").forEach((b) => b.onclick = () => { page = +b.dataset.p; render(); window.scrollTo({top:0,behavior:"smooth"}); });
-      U.observeReveals(grid);
-    }
-    document.getElementById("news-filters").querySelectorAll(".pill").forEach((b) => b.onclick = () => {
-      document.querySelectorAll("#news-filters .pill").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active"); cat = b.dataset.cat; page = 1; render();
-    });
-    render();
+    U.observeReveals(app);
   }
 
   // Turn inline Markdown links [text](url) into real, underlined <a> links.

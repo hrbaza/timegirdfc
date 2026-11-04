@@ -109,7 +109,11 @@ TG.ui = (function () {
 
   // Rich SEO for an article: meta description, OG article tags, Twitter, canonical, JSON-LD NewsArticle.
   function setArticleSEO(n) {
-    const desc = n.metaDescription || n.excerpt || "";
+    let desc = (n.metaDescription || n.excerpt || "").trim();
+    if (!desc && n.body) { // derive from the first ~160 chars of the body
+      const t = String(n.body).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      desc = t.length > 160 ? t.slice(0, 159).trimEnd() + "…" : t;
+    }
     document.title = `${n.title} — ${SITE}`;
     metaName("description", desc);
     if (n.keywords && n.keywords.length) metaName("keywords", n.keywords.join(", "));

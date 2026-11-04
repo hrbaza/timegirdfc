@@ -29,6 +29,13 @@ function clip(s, n) {
   s = String(s || "").replace(/\s+/g, " ").trim();
   return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
 }
+// Excerpt from the article's own excerpt, else the first ~160 chars of the body.
+function cardSummary(n) {
+  const s = (n.excerpt || "").trim();
+  if (s) return s;
+  const t = String(n.body || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return t.length > 160 ? t.slice(0, 159).trimEnd() + "…" : t;
+}
 // Inline Markdown links [text](url) -> real <a> links (matches the client).
 function linkify(html) {
   return String(html == null ? "" : html).replace(
@@ -98,13 +105,13 @@ function newsCardHtml(n) {
   return `<a class="card" href="/news/${n._id}">
       <div class="thumb"><div class="ggrad" style="height:100%;background:linear-gradient(135deg,#0b6b3a,#16a34a)"></div></div>
       <div class="pad"><h3>${esc(n.title)}</h3>
-        <p class="muted" style="font-size:.9rem;margin:0">${esc(n.excerpt || "")}</p>
+        <p class="muted" style="font-size:.9rem;margin:0">${esc(cardSummary(n))}</p>
         <div class="meta">${esc(n.author || SITE)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
 }
 async function fetchNewsList(limit) {
   try {
     return await News.find({ status: "published" })
-      .select("title excerpt category author publishedAt").sort("-publishedAt").limit(limit).lean();
+      .select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").limit(limit).lean();
   } catch (e) { return []; }
 }
 const NEWS_PER_PAGE = 12;
@@ -112,7 +119,7 @@ async function fetchNewsPage(page) {
   try {
     const skip = (Math.max(1, page) - 1) * NEWS_PER_PAGE;
     const [rows, total] = await Promise.all([
-      News.find({ status: "published" }).select("title excerpt category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
+      News.find({ status: "published" }).select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
       News.countDocuments({ status: "published" }),
     ]);
     return { rows, total };
@@ -297,7 +304,7 @@ function mediaUrl(col, id, field, val) {
 }
 
 function articleMeta(n) {
-  const desc = clip(n.metaDescription || n.excerpt || "", 160);
+  const desc = clip(n.metaDescription || cardSummary(n), 160);
   const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
   const M = {
     title: n.title, desc, type: "article", image: coverUrl,
