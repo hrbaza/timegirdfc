@@ -10,6 +10,17 @@ const { notFound, errorHandler } = require("./middleware/error");
 
 const app = express();
 
+// --- Canonical host: non-www → www (301), EXCEPT /ads.txt which must return
+// 200 directly on both hosts for the AdSense crawler. (Only takes effect if the
+// non-www domain is set to "serve" in Vercel rather than platform-redirect.) ---
+app.use((req, res, next) => {
+  const host = (req.headers.host || "").toLowerCase();
+  if (host === "timegridfc.com" && req.path !== "/ads.txt") {
+    return res.redirect(301, "https://www.timegridfc.com" + (req.originalUrl || req.url || "/"));
+  }
+  next();
+});
+
 // --- Security & parsing ---
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
