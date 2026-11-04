@@ -93,8 +93,6 @@ TG.pages = (function () {
     // Latest News shows the most recent posts (including the newest), so a freshly
     // published blog appears here immediately.
     const latest = S.publishedNews().slice(0, 6);
-    const today = S.fixturesToday();
-    const transfers = S.all("transfers").slice(0, 5);
     const vids = S.all("videos").slice(0, 3);
 
     app.innerHTML = `
@@ -128,27 +126,14 @@ TG.pages = (function () {
       </section>
 
       <section class="wrap section" style="padding-top:0">
-        <div class="section-head"><div><span class="eyebrow">FR-6 · Fixtures</span><h2>Today's Matches</h2></div><a class="btn ghost sm" href="/schedule">Full schedule ${icon("arrow")}</a></div>
-        <div class="grid cols-2" id="home-fixtures">${today.length ? today.map(fixtureRow).join("") : empty("No matches scheduled for today. Check the full schedule.")}</div>
-      </section>
-
-      <section class="wrap section" style="padding-top:0">
-        <div class="section-head"><div><span class="eyebrow">FR-2 · News & Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news ${icon("arrow")}</a></div>
+        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news ${icon("arrow")}</a></div>
         <div class="grid cols-3">${latest.map(newsCard).join("")}</div>
       </section>
 
-      <section class="wrap section" style="padding-top:0">
-        <div class="grid cols-2" style="align-items:start">
-          <div>
-            <div class="section-head"><div><span class="eyebrow">FR-10 · Transfers</span><h2>Latest Transfers</h2></div><a class="btn ghost sm" href="/transfers">All ${icon("arrow")}</a></div>
-            <div class="grid" style="gap:.6rem">${transfers.map(transferRow).join("")}</div>
-          </div>
-          <div>
-            <div class="section-head"><div><span class="eyebrow">FR-3 · Videos</span><h2>From the Channel</h2></div><a class="btn ghost sm" href="/videos">All videos ${icon("arrow")}</a></div>
-            <div class="grid" style="gap:.9rem">${vids.map(videoCard).join("")}</div>
-          </div>
-        </div>
-      </section>
+      ${vids.length ? `<section class="wrap section" style="padding-top:0">
+        <div class="section-head"><div><span class="eyebrow">Videos</span><h2>From the Channel</h2></div><a class="btn ghost sm" href="/videos">All videos ${icon("arrow")}</a></div>
+        <div class="grid cols-3">${vids.map(videoCard).join("")}</div>
+      </section>` : ""}
 
       <section class="wrap section" style="padding-top:0">
         <div class="card reveal" style="padding:2rem;text-align:center;background:linear-gradient(135deg,var(--green-800),var(--green-600));color:#fff">
@@ -173,7 +158,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["News"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-2 · News & Blog</span><h2>Football News</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h2>Football News</h2></div></div>
         <div class="filters" id="news-filters">${cats.map((c) => `<button class="pill${c === "All" ? " active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>
         <div class="grid cols-3" id="news-grid"></div>
         <div class="pager" id="news-pager"></div>
@@ -340,7 +325,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Players"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-4 · Players Database</span><h2>Choose a country</h2><p class="muted" style="margin:0">Select a nation to see every player from that country in our database.</p></div></div>
+        <div class="section-head"><div><span class="eyebrow">Players Database</span><h2>Choose a country</h2><p class="muted" style="margin:0">Select a nation to see every player from that country in our database.</p></div></div>
         <div class="grid auto">${countries.map((c) => `
           <a class="country-tile reveal" href="/players/${c.code}">
             <span class="fe">${U.flag(c.code, 34)}</span>
@@ -444,7 +429,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Teams"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-5 · Teams & Clubs</span><h2>Clubs & Teams</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">Teams & Clubs</span><h2>Clubs & Teams</h2></div></div>
         <div class="filters" id="tfilters">
           <button class="pill active" data-l="All">All</button>
           ${leagues.map((l) => `<button class="pill" data-l="${l.id}">${U.compFlag(l)} ${esc(l.name)}</button>`).join("")}
@@ -510,7 +495,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Schedule"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-6 · Fixtures</span><h2>Match Schedule</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">Fixtures</span><h2>Match Schedule</h2></div></div>
         <div class="filters" id="sfilters">
           <button class="pill active" data-c="All">All competitions</button>
           ${comps.map((l) => `<button class="pill" data-c="${l.id}">${U.compFlag(l)} ${esc(l.name)}</button>`).join("")}
@@ -553,7 +538,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Leagues"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-7 · Competitions</span><h2>Leagues & Competitions</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">Competitions</span><h2>Leagues & Competitions</h2></div></div>
         <div class="grid cols-3">${list.map((l) => {
           const champ = (l.champions || [])[0];
           return `<a class="card reveal" href="/leagues/${l.id}"><div class="pad">
@@ -606,7 +591,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["World Cup"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-8 · World Cup</span><h2>FIFA World Cup History</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">World Cup</span><h2>FIFA World Cup History</h2></div></div>
         <div class="filters" id="wcfilters">
           <button class="pill active" data-t="men">🏆 Men's World Cup</button>
           <button class="pill" data-t="women">🏆 Women's World Cup</button>
@@ -652,7 +637,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Awards"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-9 · Awards</span><h2>Individual Awards</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">Awards</span><h2>Individual Awards</h2></div></div>
         <div class="grid cols-3">${list.map((a) => {
           const w = (a.winners || [])[0];
           return `<a class="card reveal" href="/awards/${a.id}"><div class="pad">
@@ -693,7 +678,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Transfers"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-10 · Transfers</span><h2>Transfer Feed</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">Transfers</span><h2>Transfer Feed</h2></div></div>
         <div class="search-box" style="max-width:420px;margin-bottom:1.2rem"><span>${icon("search")}</span><input class="input" id="trf" placeholder="Filter by player or club…" autocomplete="off"></div>
         <div class="grid" style="gap:.7rem" id="trlist"></div>
       </section>`;
@@ -719,7 +704,7 @@ TG.pages = (function () {
     app.innerHTML = `
       <section class="wrap section">
         ${crumbs([["Home", "/"], ["Videos"]])}
-        <div class="section-head"><div><span class="eyebrow">FR-3 · Videos</span><h2>Time Grid FC on YouTube</h2><p class="muted" style="margin:0">Clicking any video opens it on the Time Grid FC channel.</p></div>
+        <div class="section-head"><div><span class="eyebrow">Videos</span><h2>Time Grid FC on YouTube</h2><p class="muted" style="margin:0">Clicking any video opens it on the Time Grid FC channel.</p></div>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Visit channel</a></div>
         <div class="filters" id="vfilters">${cats.map((c) => `<button class="pill${c==="All"?" active":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
         <div class="grid cols-3" id="vgrid"></div>

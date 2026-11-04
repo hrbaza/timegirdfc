@@ -13,10 +13,27 @@ Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 
-# Keep private / functional routes out of search results
+# Public API the pages load (articles, players, teams, transfers, videos,
+# images) must stay crawlable so Googlebot renders real data — allow it.
+Allow: /api/bootstrap
+Allow: /api/news
+Allow: /api/media
+Allow: /api/players
+Allow: /api/teams
+Allow: /api/leagues
+Allow: /api/worldcups
+Allow: /api/awards
+Allow: /api/fixtures
+Allow: /api/transfers
+Allow: /api/videos
+Allow: /api/countries
+Allow: /api/comments
+Allow: /api/search
+# Keep only private / functional routes out of search results
 Disallow: /admin
 Disallow: /admin.html
-Disallow: /api/
+Disallow: /api/auth
+Disallow: /api/users
 Disallow: /*?*token=
 Disallow: /*?*auth=
 

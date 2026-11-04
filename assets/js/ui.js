@@ -226,17 +226,9 @@ TG.ui = (function () {
   function renderTicker() {
     const host = document.getElementById("tg-ticker");
     if (!host) return;
-    const t = store.fixturesToday();
-    const items = [];
-    store.fixturesUpcoming().slice(0, 6).forEach((f) => {
-      const h = store.team(f.home), a = store.team(f.away);
-      const live = f.status === "live";
-      items.push(`<span>${live ? "🔴 LIVE " : "⚽ "}${esc(h ? h.name : "")} ${live ? (f.hs + "–" + f.as) : "vs"} ${esc(a ? a.name : "")} ${live ? "" : "· " + fmtDay(f.date) + " " + f.time}</span>`);
-    });
-    store.all("transfers").slice(0, 3).forEach((tr) => {
-      items.push(`<span>🔄 ${esc(tr.playerName)} → ${esc(tr.to)}</span>`);
-    });
-    if (!items.length) items.push("<span>⚽ Welcome to Time Grid FC</span>");
+    // Show real, recent article headlines (no demo scores/fixtures/dates).
+    const items = store.publishedNews().slice(0, 6).map((n) => `<span>📰 ${esc(n.title)}</span>`);
+    if (!items.length) items.push("<span>⚽ Welcome to Time Grid FC — football news, stats &amp; analysis</span>");
     const run = items.join("");
     host.innerHTML = `<div class="run">${run}${run}</div>`;
   }

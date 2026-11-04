@@ -107,6 +107,17 @@ async function fetchNewsList(limit) {
       .select("title excerpt category author publishedAt").sort("-publishedAt").limit(limit).lean();
   } catch (e) { return []; }
 }
+const NEWS_PER_PAGE = 12;
+async function fetchNewsPage(page) {
+  try {
+    const skip = (Math.max(1, page) - 1) * NEWS_PER_PAGE;
+    const [rows, total] = await Promise.all([
+      News.find({ status: "published" }).select("title excerpt category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
+      News.countDocuments({ status: "published" }),
+    ]);
+    return { rows, total };
+  } catch (e) { return { rows: [], total: 0 }; }
+}
 function homeContent(news) {
   const cards = news.slice(0, 6).map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
   return `<section class="hero wrap"><div class="hero-grid"><div>
@@ -120,11 +131,22 @@ function homeContent(news) {
       <div class="grid cols-3">${cards}</div>
     </section>`;
 }
-function newsListContent(news) {
-  const cards = news.map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+function newsListContent(rows, page, total) {
+  const cards = rows.map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+  const pages = Math.max(1, Math.ceil((total || 0) / NEWS_PER_PAGE));
+  let pager = "";
+  if (pages > 1) {
+    let nums = "";
+    for (let p = 1; p <= pages; p++) nums += `<a class="btn ${p === page ? "" : "ghost"} sm" href="/news?page=${p}">${p}</a>`;
+    pager = `<nav class="pager" id="news-pager" aria-label="Pagination" style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin-top:1.6rem">
+        ${page > 1 ? `<a class="btn ghost sm" href="/news?page=${page - 1}" rel="prev">← Prev</a>` : ""}
+        ${nums}
+        ${page < pages ? `<a class="btn ghost sm" href="/news?page=${page + 1}" rel="next">Next →</a>` : ""}
+      </nav>`;
+  }
   return `<section class="wrap section">
-      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h1>Latest Football News</h1><p class="muted" style="margin:0">Daily football news, match analysis and features.</p></div></div>
-      <div class="grid cols-3">${cards}</div>
+      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h1>Latest Football News</h1><p class="muted" style="margin:0">Daily football news, match analysis and features${pages > 1 ? ` · page ${page} of ${pages}` : ""}.</p></div></div>
+      <div class="grid cols-3">${cards}</div>${pager}
     </section>`;
 }
 const INFO_CONTENT = {
@@ -189,7 +211,7 @@ function genericContent(title, desc) {
 }
 
 /* ---- build per-route meta (+ prerendered content for articles) ---- */
-async function buildMeta(seg) {
+async function buildMeta(seg, page) {
   const r = seg[0] || "";
   const id = seg[1] || "";
   const M = { title: "", desc: DEFAULT_DESC, type: "website", image: "", jsonLd: null, content: "", article: null };
@@ -249,7 +271,12 @@ async function buildMeta(seg) {
 
   if (SIMPLE[r]) {
     M.title = SIMPLE[r][0]; M.desc = SIMPLE[r][1];
-    if (r === "news") M.content = newsListContent(await fetchNewsList(30));       // /news list
+    if (r === "news") {                                                          // /news list (paginated)
+      const pg = Math.max(1, parseInt(page, 10) || 1);
+      const { rows, total } = await fetchNewsPage(pg);
+      if (pg > 1) M.title = `Football News — page ${pg}`;
+      M.content = newsListContent(rows, pg, total);
+    }
     else if (INFO_CONTENT[r]) M.content = INFO_CONTENT[r];                        // about/contact/privacy/terms
     else M.content = genericContent(M.title, M.desc);                            // players/teams/… (heading, not empty)
   } else if (r) {
@@ -367,8 +394,11 @@ async function renderPage(req, clientDir) {
   const template = loadTemplate(clientDir);
   let urlPath = (req.path || "/").replace(/\/+$/, "") || "/";
   const seg = urlPath.split("/").filter(Boolean);
-  const M = await buildMeta(seg);
-  const canonicalUrl = CANONICAL_BASE + (urlPath === "/" ? "/" : urlPath);
+  const page = Math.max(1, parseInt((req.query && req.query.page) || "1", 10) || 1);
+  const M = await buildMeta(seg, page);
+  // Canonical keeps ?page for paginated news so each page is its own URL.
+  const isNewsPage = seg[0] === "news" && !seg[1] && page > 1;
+  const canonicalUrl = CANONICAL_BASE + (urlPath === "/" ? "/" : urlPath) + (isNewsPage ? `?page=${page}` : "");
   let html = injectHead(template, M, canonicalUrl);
   html = html.replace("<!--SSR_CONTENT-->", M.content || "");
   // Server-render the nav + footer too, so crawlers see navigation and links

@@ -45,8 +45,7 @@ TG.store = (function () {
   /* ================= LOCAL MODE (seed + localStorage) ================= */
   function seedDB() {
     const s = TG_SEED;
-    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    const fixtures = s.fixtures.map((f) => ({ ...f, date: localDate(new Date(midnight.getTime() + f.dayOffset * 86400000)) }));
+    const fixtures = clone(s.fixtures); // keep real dates; no "today" relabeling of demo fixtures
     return {
       countries: clone(s.countries), teams: clone(s.teams), players: clone(s.players),
       leagues: clone(s.leagues), worldcups: clone(s.worldcups), awards: clone(s.awards),
@@ -228,13 +227,9 @@ TG.store = (function () {
   }
 
   const todayStr = () => localDate(new Date());
-  // Keep demo fixture dates current: recompute date = today + dayOffset on every load.
-  function normalizeFixtures() {
-    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    (db.fixtures || []).forEach((f) => {
-      if (typeof f.dayOffset === "number") f.date = localDate(new Date(midnight.getTime() + f.dayOffset * 86400000));
-    });
-  }
+  // Fixtures keep their real stored dates. We no longer relabel demo fixtures to
+  // "today" (that produced misleading fake live scores/dates for crawlers).
+  function normalizeFixtures() { /* intentionally a no-op */ }
   function fixturesToday() {
     const t = todayStr();
     return all("fixtures").filter((f) => f.date === t || f.status === "live");
