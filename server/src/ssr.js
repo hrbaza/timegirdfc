@@ -61,13 +61,140 @@ const SIMPLE = {
   account: ["My Account", "Manage your Time Grid FC account."],
 };
 
+/* ---- server-rendered chrome (header + footer) so crawlers see navigation ---- */
+const NAV = [["", "Home"], ["news", "News"], ["players", "Players"], ["teams", "Teams"], ["leagues", "Leagues"], ["worldcup", "World Cup"], ["awards", "Awards"], ["transfers", "Transfers"], ["schedule", "Schedule"], ["videos", "Videos"], ["about", "About"]];
+
+function headerHtml() {
+  const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
+  return `<nav class="nav"><div class="nav-inner">
+      <a href="/" class="brand" aria-label="Time Grid FC home">Time<b>Grid</b>FC</a>
+      <div class="nav-links">${links}</div>
+    </div></nav>`;
+}
+
+function footerHtml() {
+  const col = (title, links) => `<div><h4>${title}</h4>${links.map(([h, l]) => `<a href="${h}">${l}</a>`).join("")}</div>`;
+  return `<div class="wrap foot">
+      <div>
+        <div class="brand" style="margin-bottom:.6rem">Time<b>Grid</b>FC</div>
+        <p class="muted" style="max-width:34ch">Football news, stats &amp; community — the official companion to the Time Grid FC YouTube channel.</p>
+        <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
+      </div>
+      ${col("Explore", [["/news", "News"], ["/players", "Players"], ["/teams", "Teams"], ["/schedule", "Schedule"], ["/videos", "Videos"]])}
+      ${col("Competitions", [["/leagues", "Leagues"], ["/worldcup", "World Cup"], ["/awards", "Awards"], ["/transfers", "Transfers"]])}
+      ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms &amp; Disclaimer"]])}
+    </div>
+    <div class="wrap foot-bottom">
+      <span>© ${new Date().getFullYear()} Time Grid FC. All rights reserved.</span>
+      <span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/contact">Contact</a></span>
+    </div>`;
+}
+
+/* ---- server-rendered page content for list / home / info pages ---- */
+function fmtDateShort(d) {
+  try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return ""; }
+}
+function newsCardHtml(n) {
+  return `<a class="card" href="/news/${n._id}">
+      <div class="thumb"><div class="ggrad" style="height:100%;background:linear-gradient(135deg,#0b6b3a,#16a34a)"></div></div>
+      <div class="pad"><h3>${esc(n.title)}</h3>
+        <p class="muted" style="font-size:.9rem;margin:0">${esc(n.excerpt || "")}</p>
+        <div class="meta">${esc(n.author || SITE)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
+}
+async function fetchNewsList(limit) {
+  try {
+    return await News.find({ status: "published" })
+      .select("title excerpt category author publishedAt").sort("-publishedAt").limit(limit).lean();
+  } catch (e) { return []; }
+}
+function homeContent(news) {
+  const cards = news.slice(0, 6).map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+  return `<section class="hero wrap"><div class="hero-grid"><div>
+      <span class="eyebrow">Time Grid FC · Football Hub</span>
+      <h1>Where football <span class="hl">lives</span>. News, stats &amp; every story.</h1>
+      <p class="lead">Daily analysis, a searchable database of players and clubs, match schedules, league &amp; World Cup history, awards, transfers — and every video from the Time Grid FC channel.</p>
+      <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/schedule">Today's matches</a></div>
+    </div></div></section>
+    <section class="wrap section" style="padding-top:0">
+      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news</a></div>
+      <div class="grid cols-3">${cards}</div>
+    </section>`;
+}
+function newsListContent(news) {
+  const cards = news.map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+  return `<section class="wrap section">
+      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h1>Latest Football News</h1><p class="muted" style="margin:0">Daily football news, match analysis and features.</p></div></div>
+      <div class="grid cols-3">${cards}</div>
+    </section>`;
+}
+const INFO_CONTENT = {
+  about: `<section class="wrap section article"><span class="eyebrow">About Us</span><h1>About Time Grid FC</h1><div class="content">
+      <p>Time Grid FC is an independent football content hub and the companion website to the <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">Time Grid FC YouTube channel</a>, which produces match analysis, player breakdowns, and football news for a growing community of fans.</p>
+      <p>Our goal is to be a genuinely useful football destination: original daily news and analysis, a searchable database of players and clubs organised by country, match schedules, the history of major leagues and the FIFA World Cup, individual awards, transfer news, and every video from our channel — all in one place.</p>
+      <h2>Who runs this site</h2>
+      <p>Time Grid FC is an independent project created and edited by the Time Grid FC team. All editorial articles on this site are written originally by our team. We are not affiliated with, endorsed by, or officially connected to any football club, league, or governing body; club and competition names are used descriptively for identification only.</p>
+      <h2>Editorial standards</h2>
+      <p>We aim for accuracy and clearly separate reporting from opinion and analysis. If you spot an error, please contact us and we will review and correct it promptly.</p>
+      <h2>Media &amp; image credits</h2>
+      <p>Player photographs are sourced from <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a> under their respective Creative Commons licences; editorial and cover imagery is provided by <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a>; country flags are from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn</a>. Video thumbnails belong to their respective owners and are shown only to link viewers to the original videos on YouTube.</p>
+      <h2>Contact</h2>
+      <p>Have a story tip, a correction, or a question? Visit our <a href="/contact">Contact page</a> or reach us any time at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
+    </div></section>`,
+  contact: `<section class="wrap section article"><span class="eyebrow">Contact Us</span><h1>Get in touch</h1><div class="content">
+      <p>We'd love to hear from you — whether it's a story tip, a correction to something we've published, feedback on the site, or a general enquiry.</p>
+      <p><b>Email:</b> <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a><br><b>YouTube:</b> <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">@timegrid_fc</a></p>
+    </div></section>`,
+  privacy: `<section class="wrap section article"><span class="eyebrow">Legal</span><h1>Privacy Policy</h1><div class="content">
+      <p>This Privacy Policy explains how Time Grid FC ("we", "us", "our") collects, uses, and safeguards information when you visit this website. By using the site, you agree to the practices described here.</p>
+      <h2>Information we collect</h2>
+      <p><b>Account information.</b> If you create an account, we store the name and email address you provide and an encrypted (hashed) version of your password.</p>
+      <p><b>Content you submit.</b> Comments you post on articles are stored and displayed with your chosen name.</p>
+      <p><b>Usage &amp; log data.</b> Like most websites, our servers automatically record standard information such as your browser type, device, approximate location derived from your IP address, referring pages, and the pages you view.</p>
+      <h2>Cookies</h2>
+      <p>We use cookies and similar browser storage to keep you signed in, remember preferences such as your light/dark theme choice, and understand how the site is used. You can control or delete cookies through your browser settings.</p>
+      <h2>Third-party advertising (Google AdSense)</h2>
+      <p>We may use Google AdSense to display advertisements. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this and other websites.</p>
+      <ul>
+        <li>Google's use of advertising cookies enables it and its partners to serve ads to you based on your visits to this site and/or other sites on the Internet.</li>
+        <li>You may opt out of personalised advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</li>
+        <li>You can also opt out of some third-party vendors' use of cookies at <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a>.</li>
+      </ul>
+      <h2>Third-party links &amp; media</h2>
+      <p>This site links to external sites (such as YouTube) and displays media sourced from third parties (see our <a href="/about">media credits</a>). We are not responsible for the content or privacy practices of external sites.</p>
+      <h2>Children's privacy</h2>
+      <p>This site is not directed to children under the age of 13, and we do not knowingly collect personal information from them.</p>
+      <h2>Your rights</h2>
+      <p>You may request access to, correction of, or deletion of the personal information associated with your account by contacting us.</p>
+      <h2>Contact</h2>
+      <p>Questions about this policy? Email us at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a> or use our <a href="/contact">Contact page</a>.</p>
+    </div></section>`,
+  terms: `<section class="wrap section article"><span class="eyebrow">Legal</span><h1>Terms of Use &amp; Disclaimer</h1><div class="content">
+      <p>By accessing and using Time Grid FC, you accept these terms. If you do not agree, please do not use the site.</p>
+      <h2>Content &amp; accuracy</h2>
+      <p>All articles are provided for general information, analysis, and entertainment. While we strive for accuracy, football data and news change quickly and we make no warranty that all content is complete, current, or error-free. Nothing on this site constitutes professional or betting advice.</p>
+      <h2>Intellectual property</h2>
+      <p>Original editorial content on this site is owned by Time Grid FC. Club names, competition names, and any trademarks referenced remain the property of their respective owners and are used for identification and descriptive purposes only.</p>
+      <h2>User-contributed content</h2>
+      <p>You are responsible for comments you post. Do not post unlawful, abusive, misleading, or infringing content. We may moderate, edit, or remove comments at our discretion.</p>
+      <h2>External links</h2>
+      <p>This site contains links to third-party websites, including YouTube. We are not responsible for the content, policies, or availability of those sites.</p>
+      <h2>Limitation of liability</h2>
+      <p>The site is provided "as is" without warranties of any kind. To the fullest extent permitted by law, Time Grid FC is not liable for any loss or damage arising from your use of the site.</p>
+      <h2>Contact</h2>
+      <p>Questions? Email <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
+    </div></section>`,
+};
+function genericContent(title, desc) {
+  return `<section class="wrap section"><div class="section-head"><div><h1>${esc(title)}</h1><p class="muted" style="margin:0">${esc(desc)}</p></div></div></section>`;
+}
+
 /* ---- build per-route meta (+ prerendered content for articles) ---- */
 async function buildMeta(seg) {
   const r = seg[0] || "";
   const id = seg[1] || "";
   const M = { title: "", desc: DEFAULT_DESC, type: "website", image: "", jsonLd: null, content: "", article: null };
 
-  if (r === "") return M; // home → default meta
+  if (r === "") { M.content = homeContent(await fetchNewsList(6)); return M; } // homepage
 
   try {
     if (r === "news" && id) {
@@ -120,8 +247,16 @@ async function buildMeta(seg) {
     /* DB unavailable → fall through to generic meta; page still renders. */
   }
 
-  if (SIMPLE[r]) { M.title = SIMPLE[r][0]; M.desc = SIMPLE[r][1]; }
-  else if (r) { M.title = "Not Found"; M.desc = "The page you were looking for could not be found."; }
+  if (SIMPLE[r]) {
+    M.title = SIMPLE[r][0]; M.desc = SIMPLE[r][1];
+    if (r === "news") M.content = newsListContent(await fetchNewsList(30));       // /news list
+    else if (INFO_CONTENT[r]) M.content = INFO_CONTENT[r];                        // about/contact/privacy/terms
+    else M.content = genericContent(M.title, M.desc);                            // players/teams/… (heading, not empty)
+  } else if (r) {
+    M.httpStatus = 404;
+    M.title = "Not Found"; M.desc = "The page you were looking for could not be found.";
+    M.content = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>Page not found.</p><p class="help"><a href="/">← Back home</a></p></div></section>`;
+  }
   return M;
 }
 
@@ -236,6 +371,10 @@ async function renderPage(req, clientDir) {
   const canonicalUrl = CANONICAL_BASE + (urlPath === "/" ? "/" : urlPath);
   let html = injectHead(template, M, canonicalUrl);
   html = html.replace("<!--SSR_CONTENT-->", M.content || "");
+  // Server-render the nav + footer too, so crawlers see navigation and links
+  // even without executing JavaScript. The client re-renders over these.
+  html = html.replace('<header id="tg-header"></header>', `<header id="tg-header">${headerHtml()}</header>`);
+  html = html.replace('<footer id="tg-footer"></footer>', `<footer id="tg-footer">${footerHtml()}</footer>`);
   return { html, status: M.httpStatus || 200 };
 }
 
