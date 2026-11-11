@@ -192,13 +192,25 @@ TG.pages = (function () {
     U.observeReveals(app);
   }
 
+  // Known mistyped article links in stored bodies → the correct article.
+  const LINK_FIXES = { "/news/n-3irkrkh": "/news/n-3irkrth" };
+  // Sections that were removed from the site; links to them render as plain text.
+  const DEAD_LINK = /^(https?:\/\/(www\.)?timegridfc\.com)?\/(player|players|team|teams|leagues|awards|transfers|schedule|daily)(\/|$|[?#])/i;
+  const OWN_SITE = /^https?:\/\/(www\.)?timegridfc\.com(\/|$)/i;
+  function fixLinks(html) {
+    let s = String(html == null ? "" : html);
+    for (const [bad, good] of Object.entries(LINK_FIXES)) s = s.split(bad).join(good);
+    s = s.replace(/\[([^\]\n]+)\]\(([^\s)]+)\)/g, (m, text, url) => (DEAD_LINK.test(url) ? text : m));
+    return s.replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (m, url, text) => (DEAD_LINK.test(url) ? text : m));
+  }
   // Turn inline Markdown links [text](url) into real, underlined <a> links.
-  // Lets writers embed a link right inside the sentence, e.g. [Messi](/player/p-messi).
+  // Lets writers embed a link right inside the sentence, e.g. [Messi](/news/n-v415g7w).
+  // Links to timegridfc.com stay in the same tab; other sites open in a new tab.
   function linkify(html) {
-    return String(html == null ? "" : html).replace(
+    return fixLinks(html).replace(
       /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
       (m, text, url) => {
-        const external = /^https?:\/\//i.test(url);
+        const external = /^https?:\/\//i.test(url) && !OWN_SITE.test(url);
         return `<a href="${url}"${external ? ' target="_blank" rel="noopener"' : ""}>${text}</a>`;
       }
     );

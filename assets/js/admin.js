@@ -375,7 +375,7 @@ TG.admin = (function () {
     const val = ta.value, sel = val.slice(s, e);
     let before = "", after = "", text = sel;
     if (cmd === "link") {
-      let url = prompt("Link kis URL par jaye? (jaise https://www.timegridfc.com/player/p-messi)", "https://");
+      let url = prompt("Link kis URL par jaye? (jaise https://www.timegridfc.com/news/n-3)", "https://");
       if (!url) return;
       url = url.trim();
       if (!/^(https?:\/\/|\/)/i.test(url)) url = "https://" + url;
