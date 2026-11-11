@@ -10,15 +10,11 @@ const path = require("path");
 const fs = require("fs");
 
 const News = require("./models/News");
-const Player = require("./models/Player");
-const Team = require("./models/Team");
-const League = require("./models/League");
-const Country = require("./models/Country");
 
 const SITE = "Time Grid FC";
 const CANONICAL_BASE = "https://www.timegridfc.com";
 const DEFAULT_DESC =
-  "Time Grid FC — daily football news, match analysis, player & team databases, league and World Cup history, awards, transfers and more.";
+  "Time Grid FC — daily football news, match analysis, World Cup history and videos.";
 
 function esc(s) {
   return String(s == null ? "" : s)
@@ -50,13 +46,7 @@ function linkify(html) {
 /* ---- static meta for list / info pages ---- */
 const SIMPLE = {
   news: ["News & Blog", "Latest football news, match analysis and features from Time Grid FC."],
-  players: ["Players by Country", "Browse the Time Grid FC player database organised by country."],
-  teams: ["Teams & Clubs", "Explore football clubs, stadiums and honours in the Time Grid FC database."],
-  schedule: ["Match Schedule", "Upcoming fixtures, live matches and results — Time Grid FC."],
-  leagues: ["Leagues & Competitions", "League champions, competition history and standings."],
   worldcup: ["World Cup History", "Every FIFA World Cup — hosts, champions and records."],
-  awards: ["Football Awards", "Ballon d'Or and major football award winners through history."],
-  transfers: ["Transfer News", "The latest football transfers, fees and completed deals."],
   videos: ["Videos", "Match analysis and football videos from the Time Grid FC channel."],
   about: ["About Us", "About Time Grid FC — our football coverage and mission."],
   contact: ["Contact", "Get in touch with the Time Grid FC editorial team."],
@@ -69,7 +59,7 @@ const SIMPLE = {
 };
 
 /* ---- server-rendered chrome (header + footer) so crawlers see navigation ---- */
-const NAV = [["", "Home"], ["news", "News"], ["players", "Players"], ["teams", "Teams"], ["leagues", "Leagues"], ["worldcup", "World Cup"], ["awards", "Awards"], ["transfers", "Transfers"], ["schedule", "Schedule"], ["videos", "Videos"], ["about", "About"]];
+const NAV = [["", "Home"], ["news", "News"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"]];
 
 function headerHtml() {
   const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
@@ -87,8 +77,7 @@ function footerHtml() {
         <p class="muted" style="max-width:34ch">Football news, stats &amp; community — the official companion to the Time Grid FC YouTube channel.</p>
         <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
       </div>
-      ${col("Explore", [["/news", "News"], ["/players", "Players"], ["/teams", "Teams"], ["/schedule", "Schedule"], ["/videos", "Videos"]])}
-      ${col("Competitions", [["/leagues", "Leagues"], ["/worldcup", "World Cup"], ["/awards", "Awards"], ["/transfers", "Transfers"]])}
+      ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
       ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms &amp; Disclaimer"]])}
     </div>
     <div class="wrap foot-bottom">
@@ -130,8 +119,8 @@ function homeContent(news) {
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
       <h1>Where football <span class="hl">lives</span>. News, stats &amp; every story.</h1>
-      <p class="lead">Daily analysis, a searchable database of players and clubs, match schedules, league &amp; World Cup history, awards, transfers — and every video from the Time Grid FC channel.</p>
-      <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/schedule">Today's matches</a></div>
+      <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
+      <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/videos">Watch videos</a></div>
     </div></div></section>
     <section class="wrap section" style="padding-top:0">
       <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news</a></div>
@@ -159,7 +148,7 @@ function newsListContent(rows, page, total) {
 const INFO_CONTENT = {
   about: `<section class="wrap section article"><span class="eyebrow">About Us</span><h1>About Time Grid FC</h1><div class="content">
       <p>Time Grid FC is an independent football content hub and the companion website to the <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">Time Grid FC YouTube channel</a>, which produces match analysis, player breakdowns, and football news for a growing community of fans.</p>
-      <p>Our goal is to be a genuinely useful football destination: original daily news and analysis, a searchable database of players and clubs organised by country, match schedules, the history of major leagues and the FIFA World Cup, individual awards, transfer news, and every video from our channel — all in one place.</p>
+      <p>Our goal is to be a genuinely useful football destination: original daily news and analysis, the history of the FIFA World Cup, and every video from our channel — all in one place.</p>
       <h2>Who runs this site</h2>
       <p>Time Grid FC is an independent project created and edited by the Time Grid FC team. All editorial articles on this site are written originally by our team. We are not affiliated with, endorsed by, or officially connected to any football club, league, or governing body; club and competition names are used descriptively for identification only.</p>
       <h2>Editorial standards</h2>
@@ -244,33 +233,6 @@ async function buildMeta(seg, page) {
       }
       // DB error after retries — do NOT 404 a possibly-valid article; fall through
       // to soft "News & Blog" meta (200) and let the client hydrate.
-    } else if (r === "player" && id) {
-      const p = await Player.findById(id).lean();
-      if (p) {
-        const c = p.country ? await Country.findById(p.country).lean() : null;
-        M.title = p.name;
-        M.desc = clip(`${p.name} — ${p.pos}${c ? ", " + c.name : ""}. Profile, stats and career history on Time Grid FC.`, 160);
-        M.type = "profile";
-        if (p.photo) M.image = p.photo;
-        return M;
-      }
-    } else if (r === "team" && id) {
-      const t = await Team.findById(id).lean();
-      if (t) {
-        M.title = t.name;
-        M.desc = clip(`${t.name}${t.stadium ? " — " + t.stadium : ""}. Squad, honours and club profile on Time Grid FC.`, 160);
-        return M;
-      }
-    } else if (r === "leagues" && id) {
-      const l = await League.findById(id).lean();
-      if (l) {
-        M.title = l.name;
-        M.desc = clip(`${l.name}${l.country ? " (" + l.country + ")" : ""} — champions, history and standings on Time Grid FC.`, 160);
-        return M;
-      }
-    } else if (r === "players" && id) {
-      const c = await Country.findById(id).lean();
-      if (c) { M.title = `${c.name} Players`; M.desc = clip(`All ${c.name} players in the Time Grid FC database.`, 160); return M; }
     }
   } catch (e) {
     /* DB unavailable → fall through to generic meta; page still renders. */

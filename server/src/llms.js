@@ -12,20 +12,13 @@ const News = require("./models/News");
 const SITE = "Time Grid FC";
 const BASE = "https://www.timegridfc.com";
 const SUMMARY =
-  "Time Grid FC is a football (soccer) news and reference site: daily news and " +
-  "match analysis, a searchable database of players and clubs, league and World " +
-  "Cup history, awards, transfers, fixtures and videos. It is the companion site " +
+  "Time Grid FC is a football (soccer) news site: daily news and match " +
+  "analysis, World Cup history and videos. It is the companion site " +
   "to the Time Grid FC YouTube channel (@timegrid_fc).";
 
 const SECTIONS = [
   ["Football News & Blog", "/news", "daily news, match & player analysis, features"],
-  ["Players", "/players", "player database organised by country"],
-  ["Teams & Clubs", "/teams", "clubs, stadiums and honours"],
-  ["Leagues & Competitions", "/leagues", "league champions and competition history"],
   ["World Cup", "/worldcup", "hosts, champions and records"],
-  ["Awards", "/awards", "Ballon d'Or and major football award winners"],
-  ["Transfers", "/transfers", "latest transfers, fees and deals"],
-  ["Fixtures & Results", "/schedule", "upcoming matches, live scores and results"],
   ["Videos", "/videos", "match analysis and football videos"],
   ["About", "/about", "about Time Grid FC"],
   ["Contact", "/contact", "get in touch"],

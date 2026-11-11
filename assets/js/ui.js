@@ -168,9 +168,7 @@ TG.ui = (function () {
 
   /* ---- Nav definition ---- */
   const NAV = [
-    ["", "Home"], ["news", "News"], ["players", "Players"], ["teams", "Teams"],
-    ["leagues", "Leagues"], ["worldcup", "World Cup"], ["awards", "Awards"],
-    ["transfers", "Transfers"], ["schedule", "Schedule"], ["videos", "Videos"], ["about", "About"],
+    ["", "Home"], ["news", "News"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"],
   ];
 
   /* ---- Header ---- */
@@ -190,7 +188,7 @@ TG.ui = (function () {
             <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC
           </a>
           <div class="nav-links" id="tg-navlinks">
-            <button class="nav-mob-search" id="tg-nav-search" aria-label="Search">${I.search}<span>Search players, teams, news…</span></button>
+            <button class="nav-mob-search" id="tg-nav-search" aria-label="Search">${I.search}<span>Search news…</span></button>
             ${links}
           </div>
           <div class="nav-actions">
@@ -269,8 +267,7 @@ TG.ui = (function () {
           <p class="muted" style="max-width:34ch">Football news, stats & community — the official companion to the Time Grid FC YouTube channel.</p>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
         </div>
-        ${col("Explore", [["/news", "News"], ["/players", "Players"], ["/teams", "Teams"], ["/schedule", "Schedule"], ["/videos", "Videos"]])}
-        ${col("Competitions", [["/leagues", "Leagues"], ["/worldcup", "World Cup"], ["/awards", "Awards"], ["/transfers", "Transfers"]])}
+        ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
         ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms & Disclaimer"]])}
       </div>
       <div class="wrap foot-bottom">
@@ -346,7 +343,7 @@ TG.ui = (function () {
     ov.hidden = false;
     ov.innerHTML = `
       <div class="search-panel" role="dialog" aria-label="Search">
-        <div class="top">${I.search}<input id="tg-search-input" placeholder="Search players, teams, news, competitions…" autocomplete="off" />
+        <div class="top">${I.search}<input id="tg-search-input" placeholder="Search news…" autocomplete="off" />
           <button class="icon-btn" id="tg-search-close" aria-label="Close">${I.close}</button></div>
         <div class="search-results" id="tg-search-results"><div class="empty" style="padding:2rem">Start typing to search…</div></div>
       </div>`;
@@ -362,15 +359,10 @@ TG.ui = (function () {
     if (!box) return;
     if (!q.trim()) { box.innerHTML = `<div class="empty" style="padding:2rem">Start typing to search…</div>`; return; }
     const r = store.search(q);
-    const total = r.players.length + r.teams.length + r.news.length + r.leagues.length;
-    if (!total) { box.innerHTML = `<div class="empty" style="padding:2rem">No results for “${esc(q)}”.</div>`; return; }
+    if (!r.news.length) { box.innerHTML = `<div class="empty" style="padding:2rem">No results for “${esc(q)}”.</div>`; return; }
     const grp = (title, items) => items.length ? `<div class="sr-group"><h4>${title}</h4>${items.join("")}</div>` : "";
     const item = (href, ic, t, s) => `<a class="sr-item" href="${href}" onclick="TG.ui.closeSearch()"><span class="ic">${ic}</span><span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></span></a>`;
-    box.innerHTML =
-      grp("Players", r.players.map((p) => { const c = store.country(p.country); return item(`/player/${p.id}`, initials(p.name), p.name, `${p.pos} · ${c ? c.name : ""}`); })) +
-      grp("Teams", r.teams.map((t) => item(`/team/${t.id}`, t.crest || initials(t.name), t.name, t.stadium))) +
-      grp("News", r.news.map((n) => item(`/news/${n.id}`, "📰", n.title, n.category))) +
-      grp("Competitions", r.leagues.map((l) => item(`/leagues/${l.id}`, compFlag(l), l.name, l.country)));
+    box.innerHTML = grp("News", r.news.map((n) => item(`/news/${n.id}`, "📰", n.title, n.category)));
   }
 
   /* ---- Cookie consent (GDPR / AdSense expectation) ---- */

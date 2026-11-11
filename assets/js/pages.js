@@ -111,16 +111,10 @@ TG.pages = (function () {
           <div>
             <span class="eyebrow">Time Grid FC · Football Hub</span>
             <h1>Where football <span class="hl">lives</span>.<br>News, stats & every story.</h1>
-            <p class="lead">Daily analysis, a searchable database of players and clubs, match schedules, league & World Cup history, awards, transfers — and every video from the Time Grid FC channel.</p>
+            <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
             <div class="hero-cta">
               <a class="btn" href="/news">Read the latest ${icon("arrow")}</a>
-              <a class="btn ghost" href="/schedule">Today's matches</a>
-            </div>
-            <div class="hero-stats">
-              <div><div class="n">${S.all("players").length}+</div><div class="l">Players tracked</div></div>
-              <div><div class="n">${S.all("teams").length}</div><div class="l">Clubs</div></div>
-              <div><div class="n">${S.all("worldcups").filter(w=>w.type==="men").length}</div><div class="l">World Cups</div></div>
-              <div><div class="n">${S.all("leagues").length}</div><div class="l">Competitions</div></div>
+              <a class="btn ghost" href="/videos">Watch videos</a>
             </div>
           </div>
           <div>
@@ -148,9 +142,9 @@ TG.pages = (function () {
       <section class="wrap section" style="padding-top:0">
         <div class="card reveal" style="padding:2rem;text-align:center;background:linear-gradient(135deg,var(--green-800),var(--green-600));color:#fff">
           <h2 style="color:#fff">Explore the football universe</h2>
-          <p style="opacity:.92;max-width:52ch;margin-inline:auto">Dive into player profiles by country, club squads, league champions, and the complete history of the World Cup.</p>
+          <p style="opacity:.92;max-width:52ch;margin-inline:auto">Catch up on the latest stories and the complete history of the World Cup.</p>
           <div class="hero-cta" style="justify-content:center;margin-top:1rem">
-            <a class="btn gold" href="/players">Players by country</a>
+            <a class="btn gold" href="/news">Latest news</a>
             <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.5)" href="/worldcup">World Cup history</a>
           </div>
         </div>

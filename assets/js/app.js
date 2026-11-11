@@ -80,22 +80,13 @@
     // Admin now lives on its own page.
     if (r === "admin") { location.href = "admin.html" + (id ? "#/" + id : ""); return; }
 
-    const navKey = ({ player: "players", team: "teams" }[r]) || r;
-    U.setActiveNav(navKey);
+    U.setActiveNav(r);
 
     try {
       switch (r) {
         case "": P.home(app); break;
         case "news": id ? P.newsPost(app, { id }) : P.news(app); break;
-        case "players": id ? P.playersCountry(app, { code: id }) : P.players(app); break;
-        case "player": P.player(app, { id }); break;
-        case "teams": P.teams(app); break;
-        case "team": P.team(app, { id }); break;
-        case "schedule": P.schedule(app); break;
-        case "leagues": id ? P.league(app, { id }) : P.leagues(app); break;
         case "worldcup": P.worldcup(app); break;
-        case "awards": id ? P.award(app, { id }) : P.awards(app); break;
-        case "transfers": P.transfers(app); break;
         case "videos": P.videos(app); break;
         case "about": P.about(app); break;
         case "contact": P.contact(app); break;
