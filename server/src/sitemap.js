@@ -54,7 +54,7 @@ async function buildSitemap() {
 
   // Dynamic content pages — best-effort; static pages above always ship.
   try {
-    const news = await News.find({ status: "published" })
+    const news = await News.find(require("./utils/slug").publicNews())
       .select("_id updatedAt publishedAt").sort("-publishedAt").limit(5000).lean();
     const { byId } = await require("./utils/slug").getSlugMap();
     for (const n of news) {

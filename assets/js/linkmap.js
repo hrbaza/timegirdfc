@@ -67,7 +67,6 @@
     "n-og29r36": [["Arsenal", "n-vnzg2c4", 0], ["Liverpool", "n-29rq5wj", 0]],
     "n-ohqvbfr": [["Champions League", "n-9tprjdb", 1]],
     "n-oy0zij5": [["Bayern Munich", "n-5", 0]],
-    "n-oy6pnh1": [["Liverpool", "n-nr5sp9c", 0]],
     "n-pas73mz": [["offside", "n-gdypd2b", 0], ["Premier League", "n-cnbxzpr", 0]],
     "n-pdk29r4": [["Manchester United", "n-sb7k95f", 0], ["Carrick", "n-s08cnoj", 0]],
     "n-pjmoyol": [["January window", "n-3", 1], ["United", "n-alhxd4d", 0]],

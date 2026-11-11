@@ -1,5 +1,6 @@
 const News = require("../models/News");
 const { AppError, catchAsync } = require("../utils/AppError");
+const { MERGED, publicNews } = require("../utils/slug");
 
 // Base64 images stay in Mongo but never travel in JSON — expose them as
 // lightweight /api/media/... URLs (external URLs pass through unchanged).
@@ -13,7 +14,7 @@ function toMediaUrls(doc) {
 
 // GET /api/news  (public: published only, category filter, pagination)
 const getPublished = catchAsync(async (req, res) => {
-  const filter = { status: "published" };
+  const filter = publicNews();
   if (req.query.category && req.query.category !== "All") filter.category = req.query.category;
 
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -35,7 +36,8 @@ const getAllAdmin = catchAsync(async (req, res) => {
 // GET /api/news/:id  (public; drafts hidden unless requester is admin/editor)
 const getOne = catchAsync(async (req, res, next) => {
   // Accepts the article id or its title slug (the public URL segment).
-  let doc = await News.findById(req.params.id);
+  // A merged (duplicate) article answers with the article it was merged into.
+  let doc = await News.findById(MERGED[req.params.id] || req.params.id);
   if (!doc) {
     const k = await require("../utils/slug").resolveNewsKey(req.params.id);
     const realId = k.id || null;

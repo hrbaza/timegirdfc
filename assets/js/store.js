@@ -245,7 +245,7 @@ TG.store = (function () {
       .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   }
   function publishedNews() {
-    return all("news").filter((n) => n.status === "published")
+    return all("news").filter((n) => n.status === "published" && !MERGED[n.id])
       .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
   }
   /* ---- article URLs: /news/<slug-of-the-title> ----
@@ -263,9 +263,12 @@ TG.store = (function () {
     if (s.length > 120) s = s.slice(0, 120).replace(/-[^-]*$/, "");
     return s;
   }
+  // Merged duplicate articles → the article they were merged into
+  // (keep in sync with MERGED in server/src/utils/slug.js).
+  const MERGED = { "n-oy6pnh1": "n-nr5sp9c" };
   let slugCache = { key: null, byId: {}, bySlug: {} };
   function slugMap() {
-    const list = all("news").filter((n) => n.status === "published");
+    const list = all("news").filter((n) => n.status === "published" && !MERGED[n.id]);
     const key = list.map((n) => n.id + "\u0001" + n.title + "\u0001" + n.publishedAt).join("\u0002");
     if (key === slugCache.key) return slugCache;
     const byId = {}, bySlug = {};
@@ -276,6 +279,7 @@ TG.store = (function () {
         while (bySlug[slug]) slug = `${base}-${i++}`;
         byId[n.id] = slug; bySlug[slug] = n.id;
       });
+    for (const [from, to] of Object.entries(MERGED)) if (byId[to]) byId[from] = byId[to];
     slugCache = { key, byId, bySlug };
     return slugCache;
   }
@@ -285,7 +289,7 @@ TG.store = (function () {
   function resolveNewsKey(key) {
     const m = slugMap();
     if (m.bySlug[key]) return { id: m.bySlug[key], slug: key };
-    if (m.byId[key]) return { id: key, redirect: m.byId[key] };
+    if (m.byId[key]) return { id: MERGED[key] || key, redirect: m.byId[key] };
     const lower = slugOf(key);
     if (m.bySlug[lower]) return { id: m.bySlug[lower], redirect: lower };
     return { id: key };

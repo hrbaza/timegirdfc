@@ -8,6 +8,19 @@
    Keep slugOf + assignSlugs in sync with the copy in assets/js/store.js.
    ========================================================================= */
 const MAX_LEN = 120;
+
+// Articles merged into another one (duplicate stories). The old article stays
+// in the database but is hidden from lists, search and the sitemap, and its
+// URLs (id or title slug) 301-redirect to the article it was merged into.
+// Keep in sync with MERGED in assets/js/store.js.
+const MERGED = {
+  "n-oy6pnh1": "n-nr5sp9c", // Liverpool vs Man City preview (duplicate) -> newer preview
+};
+const MERGED_IDS = Object.keys(MERGED);
+// Mongo filter for articles the public may list. extraIds: more ids to leave out.
+function publicNews(extra, extraIds) {
+  return Object.assign({ status: "published", _id: { $nin: MERGED_IDS.concat(extraIds || []) } }, extra || {});
+}
 const EXTRA = { "ø": "o", "Ø": "o", "ß": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "đ": "d", "Đ": "d", "ł": "l", "Ł": "l", "ı": "i" };
 
 function slugOf(title) {
@@ -47,7 +60,16 @@ async function getSlugMap(force) {
   const News = require("../models/News");
   pending = News.find({ status: "published" }).select("_id title publishedAt").lean()
     .then((rows) => {
-      cache = assignSlugs(rows.map((r) => ({ id: r._id, title: r.title, publishedAt: r.publishedAt })));
+      const map = assignSlugs(rows.map((r) => ({ id: r._id, title: r.title, publishedAt: r.publishedAt })));
+      // Merged articles: their old slug and id both point at the target's slug.
+      map.redirectSlug = {};
+      for (const [from, to] of Object.entries(MERGED)) {
+        if (!map.byId[from] || !map.byId[to]) continue;
+        map.redirectSlug[map.byId[from]] = map.byId[to];
+        delete map.bySlug[map.byId[from]];
+        map.byId[from] = map.byId[to];
+      }
+      cache = map;
       cacheAt = Date.now();
       return cache;
     })
@@ -61,6 +83,7 @@ async function resolveNewsKey(key) {
   for (const force of [false, true]) {               // retry once with a fresh map (new article)
     const map = await getSlugMap(force);
     if (map.bySlug[key]) return { id: map.bySlug[key], slug: key };
+    if (map.redirectSlug && map.redirectSlug[key]) return { redirect: map.redirectSlug[key] };
     if (map.byId[key]) return { redirect: map.byId[key] };
     const lower = slugOf(key);                        // /news/Some-Title or stray characters
     if (lower !== key && map.bySlug[lower]) return { redirect: lower };
@@ -70,4 +93,4 @@ async function resolveNewsKey(key) {
   return {};
 }
 
-module.exports = { slugOf, assignSlugs, getSlugMap, resolveNewsKey };
+module.exports = { slugOf, assignSlugs, getSlugMap, resolveNewsKey, MERGED, publicNews };

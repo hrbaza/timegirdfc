@@ -61,7 +61,7 @@ function header() {
 async function buildLlms() {
   const lines = header();
   try {
-    const news = await News.find({ status: "published" })
+    const news = await News.find(require("./utils/slug").publicNews())
       .select("_id title excerpt metaDescription publishedAt").sort("-publishedAt").limit(100).lean();
     const { byId } = await getSlugMap();
     if (news.length) {
@@ -81,7 +81,7 @@ async function buildLlmsFull() {
   const lines = header();
   lines.push("---", "", "# Articles (full text)", "");
   try {
-    const news = await News.find({ status: "published" })
+    const news = await News.find(require("./utils/slug").publicNews())
       .select("_id title excerpt category author publishedAt updatedAt keywords body").sort("-publishedAt").limit(200).lean();
     const { byId } = await getSlugMap();
     for (const n of news) {

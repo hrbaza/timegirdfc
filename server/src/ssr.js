@@ -10,7 +10,7 @@ const path = require("path");
 const fs = require("fs");
 
 const News = require("./models/News");
-const { getSlugMap, resolveNewsKey } = require("./utils/slug");
+const { getSlugMap, resolveNewsKey, publicNews } = require("./utils/slug");
 const { apply: applyLinkMap } = require("../../assets/js/linkmap.js"); // internal linking plan
 
 const SITE = "Time Grid FC";
@@ -116,7 +116,7 @@ function newsCardHtml(n, map) {
 }
 async function fetchNewsList(limit) {
   try {
-    return await News.find({ status: "published" })
+    return await News.find(publicNews())
       .select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").limit(limit).lean();
   } catch (e) { return []; }
 }
@@ -125,8 +125,8 @@ async function fetchNewsPage(page) {
   try {
     const skip = (Math.max(1, page) - 1) * NEWS_PER_PAGE;
     const [rows, total] = await Promise.all([
-      News.find({ status: "published" }).select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
-      News.countDocuments({ status: "published" }),
+      News.find(publicNews()).select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
+      News.countDocuments(publicNews()),
     ]);
     return { rows, total };
   } catch (e) { return { rows: [], total: 0 }; }
@@ -254,8 +254,8 @@ async function buildMeta(seg, page) {
         let related = [];
         try {
           const sel = "title excerpt body metaDescription category author publishedAt";
-          related = await News.find({ status: "published", category: n.category, _id: { $ne: n._id } }).select(sel).sort("-publishedAt").limit(3).lean();
-          if (!related.length) related = await News.find({ status: "published", _id: { $ne: n._id } }).select(sel).sort("-publishedAt").limit(3).lean();
+          related = await News.find(publicNews({ category: n.category }, [n._id])).select(sel).sort("-publishedAt").limit(3).lean();
+          if (!related.length) related = await News.find(publicNews(null, [n._id])).select(sel).sort("-publishedAt").limit(3).lean();
         } catch (e) { /* render without it */ }
         return articleMeta(n, map, related);
       }

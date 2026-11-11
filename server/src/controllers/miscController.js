@@ -20,7 +20,7 @@ const search = catchAsync(async (req, res) => {
   const [players, teams, news, leagues] = await Promise.all([
     Player.find({ $or: [{ name: rx }, { pos: rx }] }).limit(6),
     Team.find({ $or: [{ name: rx }, { stadium: rx }] }).limit(6),
-    News.find({ status: "published", $or: [{ title: rx }, { excerpt: rx }, { tags: rx }] })
+    News.find(require("../utils/slug").publicNews({ $or: [{ title: rx }, { excerpt: rx }, { tags: rx }] }))
       .select("-cover -bodyImage1 -bodyImage2 -body").limit(6),
     League.find({ $or: [{ name: rx }, { country: rx }] }).limit(6),
   ]);
@@ -89,7 +89,7 @@ const bootstrap = catchAsync(async (req, res) => {
       WorldCup.find().sort("-year"),
       Award.find(),
       Fixture.find().sort("date time"),
-      leanNews({ status: "published" }),
+      leanNews(require("../utils/slug").publicNews()),
       Transfer.find().sort("-date"),
       leanVideos(),
       Comment.find({ status: "approved" }).sort("-createdAt"),
