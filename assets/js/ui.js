@@ -152,7 +152,7 @@ TG.ui = (function () {
       "datePublished": published || undefined,
       "dateModified": modified || undefined,
       "author": { "@type": "Organization", "name": n.author || SITE, "url": BASE + "/about" },
-      "publisher": { "@type": "Organization", "name": SITE, "url": BASE + "/" },
+      "publisher": { "@type": "Organization", "name": SITE, "url": BASE + "/", "logo": { "@type": "ImageObject", "url": BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
       "articleSection": n.category,
       "keywords": kw,
@@ -193,6 +193,8 @@ TG.ui = (function () {
   ];
 
   /* ---- Header ---- */
+  // Channel logo (round badge) used in the header, admin bar and footer.
+  const LOGO_IMG = '<img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async">';
   function renderHeader() {
     if (!document.getElementById("tg-header")) return;
     const u = store.currentUser();
@@ -206,7 +208,7 @@ TG.ui = (function () {
       <nav class="nav">
         <div class="nav-inner">
           <a href="/" class="brand" aria-label="Time Grid FC home">
-            <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC
+            ${LOGO_IMG} <span class="brand-txt">Time<b>Grid</b>FC</span>
           </a>
           <div class="nav-links" id="tg-navlinks">
             <button class="nav-mob-search" id="tg-nav-search" aria-label="Search">${I.search}<span>Search news…</span></button>
@@ -233,7 +235,7 @@ TG.ui = (function () {
       <nav class="nav">
         <div class="nav-inner">
           <a href="/" class="brand" aria-label="Time Grid FC home">
-            <span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC <span class="chip" style="margin-left:.2rem">Admin</span>
+            ${LOGO_IMG} <span class="brand-txt">Time<b>Grid</b>FC</span> <span class="chip" style="margin-left:.2rem">Admin</span>
           </a>
           <div style="flex:1"></div>
           <div class="nav-actions">
@@ -284,7 +286,7 @@ TG.ui = (function () {
     document.getElementById("tg-footer").innerHTML = `
       <div class="wrap foot">
         <div>
-          <div class="brand" style="margin-bottom:.6rem"><span class="ball">${ballSVG()}</span> Time<b>Grid</b>FC</div>
+          <div class="brand" style="margin-bottom:.6rem">${LOGO_IMG} <span class="brand-txt">Time<b>Grid</b>FC</span></div>
           <p class="muted" style="max-width:34ch">Football news, stats & community — the official companion to the Time Grid FC YouTube channel.</p>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
         </div>
