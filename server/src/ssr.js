@@ -233,7 +233,23 @@ async function buildMeta(seg, page) {
   let map = null;
   try { map = await getSlugMap(); } catch (e) { /* fall back to id URLs */ }
 
-  if (r === "") { M.content = homeContent(await fetchNewsList(6), map); return M; } // homepage
+  if (r === "") {                                                                // homepage
+    M.content = homeContent(await fetchNewsList(6), map);
+    M.image = CANONICAL_BASE + "/assets/img/logo-512.webp";
+    // Organization (logo) + WebSite (site name) — what Google uses for the
+    // site name and logo shown next to search results.
+    M.jsonLd = [{
+      "@context": "https://schema.org", "@type": "Organization", "@id": CANONICAL_BASE + "/#organization",
+      "name": SITE, "url": CANONICAL_BASE + "/",
+      "logo": { "@type": "ImageObject", "url": CANONICAL_BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 },
+      "sameAs": ["https://www.youtube.com/@timegrid_fc"],
+    }, {
+      "@context": "https://schema.org", "@type": "WebSite", "@id": CANONICAL_BASE + "/#website",
+      "name": SITE, "alternateName": "TimeGridFC", "url": CANONICAL_BASE + "/",
+      "publisher": { "@id": CANONICAL_BASE + "/#organization" },
+    }];
+    return M;
+  }
 
   try {
     if (r === "news" && id) {

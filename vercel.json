@@ -7,14 +7,15 @@
     { "src": "assets/**", "use": "@vercel/static" },
     { "src": "robots.txt", "use": "@vercel/static" },
     { "src": "sitemap.xml", "use": "@vercel/static" },
-    { "src": "ads.txt", "use": "@vercel/static" }
+    { "src": "ads.txt", "use": "@vercel/static" },
+    { "src": "favicon.ico", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "src": "/admin", "dest": "/admin.html" },
     { "src": "/admin.html", "dest": "/admin.html" },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/(robots\\.txt|ads\\.txt)", "dest": "/$1" },
+    { "src": "/(robots\\.txt|ads\\.txt|favicon\\.ico)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/api/index.js" }
   ]
 }

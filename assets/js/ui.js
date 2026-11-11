@@ -106,7 +106,10 @@ TG.ui = (function () {
     metaName("twitter:title", full);
     if (desc) metaName("twitter:description", desc);
     setCanonical(clean);
-    setJsonLd(null); // clear any article schema from a previous page
+    // Clear article schema left from a previous page, but keep the server's
+    // homepage Organization/WebSite schema (Google reads it for the logo).
+    const ld = document.getElementById("tg-jsonld");
+    if (ld && /"NewsArticle"/.test(ld.textContent)) setJsonLd(null);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
