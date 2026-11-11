@@ -11,6 +11,7 @@ const fs = require("fs");
 
 const News = require("./models/News");
 const { getSlugMap, resolveNewsKey } = require("./utils/slug");
+const { apply: applyLinkMap } = require("../../assets/js/linkmap.js"); // internal linking plan
 
 const SITE = "Time Grid FC";
 const CANONICAL_BASE = "https://www.timegridfc.com";
@@ -324,7 +325,7 @@ function articleContent(n, coverUrl, map) {
   const cu = coverUrl != null ? coverUrl : mediaUrl("news", n._id, "cover", n.cover);
   const cover = cu ? `<figure class="cover"><img src="${esc(cu)}" alt="${esc(n.title)}"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
-  const body = linkify(n.body || `<p>${esc(n.excerpt || "")}</p>`, map); // authored HTML (trusted)
+  const body = linkify(applyLinkMap(String(n._id), n.body) || `<p>${esc(n.excerpt || "")}</p>`, map); // authored HTML (trusted)
   return `<article class="wrap section article">
       <span class="badge-cat">${esc(n.category || "")}</span>
       <h1>${esc(n.title)}</h1>

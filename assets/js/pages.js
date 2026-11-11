@@ -253,7 +253,8 @@ TG.pages = (function () {
     const updated = n.updatedAt && n.updatedAt !== n.publishedAt;
 
     // Add ids to <h2> headings and build a table of contents (router-safe anchors).
-    let bodyHtml = linkify(n.body) || `<p>${esc(n.excerpt || "")}</p>`;
+    const LM = window.TG_LINKMAP;
+    let bodyHtml = linkify(LM ? LM.apply(n.id || n._id, n.body) : n.body) ||`<p>${esc(n.excerpt || "")}</p>`;
     let toc = "";
     try {
       const tmp = document.createElement("div"); tmp.innerHTML = bodyHtml;
