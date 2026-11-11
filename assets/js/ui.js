@@ -98,11 +98,14 @@ TG.ui = (function () {
     if (desc) metaProp("og:description", desc);
     metaProp("og:type", "website");
     metaProp("og:site_name", SITE);
-    metaProp("og:url", location.href);
+    // Canonical = clean URL (keeps only ?page for the paginated news list, like the server).
+    const pg = parseInt(new URLSearchParams(location.search).get("page"), 10);
+    const clean = "https://www.timegridfc.com" + location.pathname + (location.pathname === "/news" && pg > 1 ? "?page=" + pg : "");
+    metaProp("og:url", clean);
     metaName("twitter:card", "summary_large_image");
     metaName("twitter:title", full);
     if (desc) metaName("twitter:description", desc);
-    setCanonical(location.href);
+    setCanonical(clean);
     setJsonLd(null); // clear any article schema from a previous page
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
@@ -114,37 +117,55 @@ TG.ui = (function () {
       const t = String(n.body).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       desc = t.length > 160 ? t.slice(0, 159).trimEnd() + "…" : t;
     }
+    // Same tags as the server render (server/src/ssr.js articleMeta).
+    const BASE = "https://www.timegridfc.com";
+    const pageUrl = BASE + location.pathname;            // never the query/hash (utm etc.)
+    const iso = (d) => { const t = d ? new Date(d) : null; return t && !isNaN(t) ? t.toISOString() : ""; };
+    const published = iso(n.publishedAt), modified = iso(n.updatedAt) || published;
+    let img = n.cover && !/^data:/i.test(n.cover) ? n.cover : (n.cover ? `/api/media/news/${n.id || n._id}/cover` : "");
+    if (img && img.startsWith("/")) img = BASE + img;
+    if (/^https:\/\/images\.unsplash\.com\//i.test(img)) img = img.replace(/([?&])w=\d+/, "$1w=1200");
+    const kw = (n.keywords && n.keywords.length ? n.keywords : n.tags || []).join(", ");
     document.title = `${n.title} — ${SITE}`;
     metaName("description", desc);
-    if (n.keywords && n.keywords.length) metaName("keywords", n.keywords.join(", "));
+    if (kw) metaName("keywords", kw);
     metaProp("og:type", "article");
-    metaProp("og:title", n.title);
+    metaProp("og:title", `${n.title} — ${SITE}`);
     metaProp("og:description", desc);
     metaProp("og:site_name", SITE);
-    metaProp("og:url", location.href);
-    if (n.cover) metaProp("og:image", n.cover);
-    metaProp("article:published_time", n.publishedAt || "");
-    metaProp("article:modified_time", n.updatedAt || n.publishedAt || "");
+    metaProp("og:url", pageUrl);
+    if (img) { metaProp("og:image", img); metaProp("og:image:alt", n.title); }
+    if (published) metaProp("article:published_time", published);
+    if (modified) metaProp("article:modified_time", modified);
     metaProp("article:section", n.category || "");
     metaName("twitter:card", "summary_large_image");
-    metaName("twitter:title", n.title);
+    metaName("twitter:title", `${n.title} — ${SITE}`);
     metaName("twitter:description", desc);
-    if (n.cover) metaName("twitter:image", n.cover);
-    setCanonical(location.href);
-    setJsonLd({
+    if (img) metaName("twitter:image", img);
+    setCanonical(pageUrl);
+    setJsonLd([{
       "@context": "https://schema.org",
       "@type": "NewsArticle",
       "headline": n.title,
       "description": desc,
-      "image": n.cover ? [n.cover] : undefined,
-      "datePublished": n.publishedAt,
-      "dateModified": n.updatedAt || n.publishedAt,
-      "author": { "@type": "Organization", "name": n.author || SITE },
-      "publisher": { "@type": "Organization", "name": SITE },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": location.href },
+      "image": img ? [img] : undefined,
+      "datePublished": published || undefined,
+      "dateModified": modified || undefined,
+      "author": { "@type": "Organization", "name": n.author || SITE, "url": BASE + "/about" },
+      "publisher": { "@type": "Organization", "name": SITE, "url": BASE + "/" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
       "articleSection": n.category,
-      "keywords": (n.keywords || n.tags || []).join(", "),
-    });
+      "keywords": kw,
+      "inLanguage": "en",
+    }, {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE + "/" },
+        { "@type": "ListItem", "position": 2, "name": "News", "item": BASE + "/news" },
+        { "@type": "ListItem", "position": 3, "name": n.title, "item": pageUrl },
+      ],
+    }]);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 

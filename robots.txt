@@ -1,6 +1,6 @@
 # robots.txt — Time Grid FC (https://www.timegridfc.com)
-# Football news, match analysis, player & club database, leagues, World Cup,
-# awards, transfers and videos.
+# Football news, match analysis, transfer news, World Cup history
+# and videos.
 # Optimised for search engines (Google, Bing) and AI answer engines
 # (ChatGPT, Claude, Perplexity, Gemini).
 # AI answer engines: structured content is available at
@@ -13,20 +13,13 @@ Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 
-# Public API the pages load (articles, players, teams, transfers, videos,
+# Public API the pages load (articles, World Cups, videos, comments,
 # images) must stay crawlable so Googlebot renders real data — allow it.
 Allow: /api/bootstrap
 Allow: /api/news
 Allow: /api/media
-Allow: /api/players
-Allow: /api/teams
-Allow: /api/leagues
 Allow: /api/worldcups
-Allow: /api/awards
-Allow: /api/fixtures
-Allow: /api/transfers
 Allow: /api/videos
-Allow: /api/countries
 Allow: /api/comments
 Allow: /api/search
 # Keep only private / functional routes out of search results

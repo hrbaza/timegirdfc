@@ -249,7 +249,16 @@ async function buildMeta(seg, page) {
         try { n = await News.findById(realId).select("-bodyImage1 -bodyImage2").lean(); dbOk = true; }
         catch (e) { await new Promise((rz) => setTimeout(rz, 150)); }
       }
-      if (n && n.status === "published") return articleMeta(n, map);
+      if (n && n.status === "published") {
+        // Related articles (same category first), mirroring the client's block.
+        let related = [];
+        try {
+          const sel = "title excerpt body metaDescription category author publishedAt";
+          related = await News.find({ status: "published", category: n.category, _id: { $ne: n._id } }).select(sel).sort("-publishedAt").limit(3).lean();
+          if (!related.length) related = await News.find({ status: "published", _id: { $ne: n._id } }).select(sel).sort("-publishedAt").limit(3).lean();
+        } catch (e) { /* render without it */ }
+        return articleMeta(n, map, related);
+      }
       if (dbOk) {
         // DB answered and there is no published article with this id → real 404
         // (a 200 "Article not found" would be a Soft 404 to Google).
@@ -293,40 +302,68 @@ function mediaUrl(col, id, field, val) {
   return val;
 }
 
-function articleMeta(n, map) {
+// ISO 8601 for article dates (og/article meta and JSON-LD); "" if missing/invalid.
+function isoDate(d) {
+  const t = d ? new Date(d) : null;
+  return t && !isNaN(t) ? t.toISOString() : "";
+}
+// Large share/preview image: Unsplash covers are stored at w=800; Google
+// Discover and social cards want at least 1200px wide.
+function largeImage(url) {
+  return /^https:\/\/images\.unsplash\.com\//i.test(url || "") ? url.replace(/([?&])w=\d+/, "$1w=1200") : url;
+}
+
+function articleMeta(n, map, related) {
   const desc = clip(n.metaDescription || cardSummary(n), 160);
   const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
+  const pageUrl = `${CANONICAL_BASE}${newsUrl(n._id, map)}`;
+  const kw = (n.keywords && n.keywords.length ? n.keywords : n.tags || []);
+  const published = isoDate(n.publishedAt), modified = isoDate(n.updatedAt) || published;
   const M = {
-    title: n.title, desc, type: "article", image: coverUrl,
-    content: articleContent(n, coverUrl, map),
-    article: { published: n.publishedAt, modified: n.updatedAt || n.publishedAt, section: n.category },
+    title: n.title, desc, type: "article", image: largeImage(coverUrl), imageAlt: n.title,
+    keywords: Array.isArray(kw) ? kw.join(", ") : String(kw || ""),
+    content: articleContent(n, coverUrl, map, related),
+    article: { published, modified, section: n.category, tags: Array.isArray(n.tags) ? n.tags : [] },
   };
-  M.jsonLd = {
+  M.jsonLd = [{
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     "headline": n.title,
     "description": desc,
-    "image": coverUrl ? [coverUrl] : undefined,
-    "datePublished": n.publishedAt,
-    "dateModified": n.updatedAt || n.publishedAt,
-    "author": { "@type": "Organization", "name": n.author || SITE },
-    "publisher": { "@type": "Organization", "name": SITE },
-    "mainEntityOfPage": { "@type": "WebPage", "@id": `${CANONICAL_BASE}${newsUrl(n._id, map)}` },
+    "image": coverUrl ? [largeImage(coverUrl)] : undefined,
+    "datePublished": published || undefined,
+    "dateModified": modified || undefined,
+    "author": { "@type": "Organization", "name": n.author || SITE, "url": CANONICAL_BASE + "/about" },
+    "publisher": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/" },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
     "articleSection": n.category,
-    "keywords": (n.keywords || n.tags || []).join(", "),
-  };
+    "keywords": M.keywords,
+    "inLanguage": "en",
+  }, {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": CANONICAL_BASE + "/" },
+      { "@type": "ListItem", "position": 2, "name": "News", "item": CANONICAL_BASE + "/news" },
+      { "@type": "ListItem", "position": 3, "name": n.title, "item": pageUrl },
+    ],
+  }];
   return M;
 }
 
 // Minimal server-rendered article so crawlers read the content without JS.
-function articleContent(n, coverUrl, map) {
+function articleContent(n, coverUrl, map, related) {
   let dateStr = "";
   try { dateStr = new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) {}
   const cu = coverUrl != null ? coverUrl : mediaUrl("news", n._id, "cover", n.cover);
   const cover = cu ? `<figure class="cover"><img src="${esc(cu)}" alt="${esc(n.title)}"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
   const body = linkify(applyLinkMap(String(n._id), n.body) || `<p>${esc(n.excerpt || "")}</p>`, map); // authored HTML (trusted)
+  const rel = (related || []).length
+    ? `<section class="wrap section" style="padding-top:0"><div class="section-head"><h2>Related articles</h2></div><div class="grid cols-3">${related.map((r) => newsCardHtml(r, map)).join("")}</div></section>`
+    : "";
   return `<article class="wrap section article">
+      <nav class="muted" aria-label="Breadcrumb" style="font-size:.85rem;margin-bottom:.6rem"><a href="/">Home</a> › <a href="/news">News</a></nav>
       <span class="badge-cat">${esc(n.category || "")}</span>
       <h1>${esc(n.title)}</h1>
       <div class="byline"><span>By <b>${esc(n.author || SITE)}</b></span> · <span>${esc(dateStr)}</span></div>
@@ -334,7 +371,7 @@ function articleContent(n, coverUrl, map) {
       ${cover}
       ${n.excerpt ? `<p class="lede">${esc(n.excerpt)}</p>` : ""}
       <div class="content">${body}</div>
-    </article>`;
+    </article>${rel}`;
 }
 
 /* ---- inject meta + content into the index.html template ---- */
@@ -358,16 +395,21 @@ function injectHead(html, M, canonicalUrl) {
     `<meta name="twitter:description" content="${esc(M.desc)}" />`,
     `<link rel="canonical" href="${esc(canonicalUrl)}" />`,
   ];
+  // Per-article keywords replace the sitewide default list.
+  if (M.keywords) html = html.replace(/<meta name="keywords"[^>]*>/, `<meta name="keywords" content="${esc(M.keywords)}" />`);
   if (M.image) {
     tags.push(`<meta property="og:image" content="${esc(M.image)}" />`);
+    if (M.imageAlt) tags.push(`<meta property="og:image:alt" content="${esc(M.imageAlt)}" />`);
     tags.push(`<meta name="twitter:image" content="${esc(M.image)}" />`);
   }
   if (M.article) {
-    tags.push(`<meta property="article:published_time" content="${esc(M.article.published || "")}" />`);
-    tags.push(`<meta property="article:modified_time" content="${esc(M.article.modified || "")}" />`);
+    if (M.article.published) tags.push(`<meta property="article:published_time" content="${esc(M.article.published)}" />`);
+    if (M.article.modified) tags.push(`<meta property="article:modified_time" content="${esc(M.article.modified)}" />`);
     tags.push(`<meta property="article:section" content="${esc(M.article.section || "")}" />`);
+    (M.article.tags || []).forEach((t) => tags.push(`<meta property="article:tag" content="${esc(t)}" />`));
   }
-  if (M.jsonLd) tags.push(`<script type="application/ld+json" id="tg-jsonld">${JSON.stringify(M.jsonLd)}</script>`);
+  // "</" is escaped so article text can never close the script tag early.
+  if (M.jsonLd) tags.push(`<script type="application/ld+json" id="tg-jsonld">${JSON.stringify(M.jsonLd).replace(/<\//g, "<\\/")}</script>`);
 
   return html.replace("<!--SSR_HEAD-->", tags.join("\n  "));
 }
