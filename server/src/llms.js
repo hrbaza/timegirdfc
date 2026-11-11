@@ -8,6 +8,7 @@
    Both are generated from the database and are resilient if the DB is down.
    ========================================================================= */
 const News = require("./models/News");
+const { getSlugMap } = require("./utils/slug");
 
 const SITE = "Time Grid FC";
 const BASE = "https://www.timegridfc.com";
@@ -62,11 +63,12 @@ async function buildLlms() {
   try {
     const news = await News.find({ status: "published" })
       .select("_id title excerpt metaDescription publishedAt").sort("-publishedAt").limit(100).lean();
+    const { byId } = await getSlugMap();
     if (news.length) {
       lines.push("## Latest articles");
       for (const n of news) {
         const blurb = (n.excerpt || n.metaDescription || "").replace(/\s+/g, " ").trim();
-        lines.push(`- [${n.title}](${BASE}/news/${n._id})${blurb ? ": " + blurb : ""}`);
+        lines.push(`- [${n.title}](${BASE}/news/${byId[n._id] || n._id})${blurb ? ": " + blurb : ""}`);
       }
       lines.push("");
     }
@@ -81,9 +83,10 @@ async function buildLlmsFull() {
   try {
     const news = await News.find({ status: "published" })
       .select("_id title excerpt category author publishedAt updatedAt keywords body").sort("-publishedAt").limit(200).lean();
+    const { byId } = await getSlugMap();
     for (const n of news) {
       lines.push(`## ${n.title}`);
-      lines.push(`URL: ${BASE}/news/${n._id}`);
+      lines.push(`URL: ${BASE}/news/${byId[n._id] || n._id}`);
       if (n.category) lines.push(`Category: ${n.category}`);
       lines.push(`Author: ${n.author || SITE}`);
       lines.push(`Published: ${fmtDate(n.publishedAt)}${n.updatedAt && n.updatedAt !== n.publishedAt ? " (updated " + fmtDate(n.updatedAt) + ")" : ""}`);

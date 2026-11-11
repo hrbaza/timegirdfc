@@ -10,6 +10,7 @@ const path = require("path");
 const fs = require("fs");
 
 const News = require("./models/News");
+const { getSlugMap, resolveNewsKey } = require("./utils/slug");
 
 const SITE = "Time Grid FC";
 const CANONICAL_BASE = "https://www.timegridfc.com";
@@ -37,16 +38,18 @@ const LINK_FIXES = { "/news/n-3irkrkh": "/news/n-3irkrth" };
 // Sections that were removed from the site; links to them render as plain text.
 const DEAD_LINK = /^(https?:\/\/(www\.)?timegridfc\.com)?\/(player|players|team|teams|leagues|awards|transfers|schedule|daily)(\/|$|[?#])/i;
 const OWN_SITE = /^https?:\/\/(www\.)?timegridfc\.com(\/|$)/i;
-function fixLinks(html) {
+function fixLinks(html, slugMap) {
   let s = String(html == null ? "" : html);
   for (const [bad, good] of Object.entries(LINK_FIXES)) s = s.split(bad).join(good);
+  // Old id links (/news/n-abc1234) -> the article's title URL, so no redirect hop.
+  if (slugMap) s = s.replace(/\/news\/(n-[a-z0-9]+)(?![a-z0-9-])/gi, (m, id) => (slugMap.byId[id] ? "/news/" + slugMap.byId[id] : m));
   s = s.replace(/\[([^\]\n]+)\]\(([^\s)]+)\)/g, (m, text, url) => (DEAD_LINK.test(url) ? text : m));
   return s.replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (m, url, text) => (DEAD_LINK.test(url) ? text : m));
 }
 // Inline Markdown links [text](url) -> real <a> links (matches the client).
 // Links to timegridfc.com stay in the same tab; other sites open in a new tab.
-function linkify(html) {
-  return fixLinks(html).replace(
+function linkify(html, slugMap) {
+  return fixLinks(html, slugMap).replace(
     /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
     (m, text, url) => {
       const external = /^https?:\/\//i.test(url) && !OWN_SITE.test(url);
@@ -102,8 +105,9 @@ function footerHtml() {
 function fmtDateShort(d) {
   try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return ""; }
 }
-function newsCardHtml(n) {
-  return `<a class="card" href="/news/${n._id}">
+const newsUrl = (id, map) => "/news/" + ((map && map.byId[id]) || id);
+function newsCardHtml(n, map) {
+  return `<a class="card" href="${newsUrl(n._id, map)}">
       <div class="thumb"><div class="ggrad" style="height:100%;background:linear-gradient(135deg,#0b6b3a,#16a34a)"></div></div>
       <div class="pad"><h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(cardSummary(n))}</p>
@@ -126,8 +130,8 @@ async function fetchNewsPage(page) {
     return { rows, total };
   } catch (e) { return { rows: [], total: 0 }; }
 }
-function homeContent(news) {
-  const cards = news.slice(0, 6).map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+function homeContent(news, map) {
+  const cards = news.slice(0, 6).map((n) => newsCardHtml(n, map)).join("") || `<p class="muted">New articles are on the way.</p>`;
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
       <h1>Where football <span class="hl">lives</span>. News, stats &amp; every story.</h1>
@@ -139,8 +143,8 @@ function homeContent(news) {
       <div class="grid cols-3">${cards}</div>
     </section>`;
 }
-function newsListContent(rows, page, total) {
-  const cards = rows.map(newsCardHtml).join("") || `<p class="muted">New articles are on the way.</p>`;
+function newsListContent(rows, page, total, map) {
+  const cards = rows.map((n) => newsCardHtml(n, map)).join("") || `<p class="muted">New articles are on the way.</p>`;
   const pages = Math.max(1, Math.ceil((total || 0) / NEWS_PER_PAGE));
   let pager = "";
   if (pages > 1) {
@@ -224,16 +228,27 @@ async function buildMeta(seg, page) {
   const id = seg[1] || "";
   const M = { title: "", desc: DEFAULT_DESC, type: "website", image: "", jsonLd: null, content: "", article: null };
 
-  if (r === "") { M.content = homeContent(await fetchNewsList(6)); return M; } // homepage
+  // id -> title-slug map of published articles (null if the DB is unreachable).
+  let map = null;
+  try { map = await getSlugMap(); } catch (e) { /* fall back to id URLs */ }
+
+  if (r === "") { M.content = homeContent(await fetchNewsList(6), map); return M; } // homepage
 
   try {
     if (r === "news" && id) {
+      // /news/<title-slug> is the real URL; an old /news/<id> URL 301s to it.
+      let realId = id;
+      try {
+        const k = await resolveNewsKey(id);
+        if (k.redirect) return { redirect: "/news/" + k.redirect };
+        if (k.id) realId = k.id;
+      } catch (e) { /* DB hiccup: try the segment as an id below */ }
       let n = null, dbOk = false;
       for (let a = 0; a < 3 && !dbOk; a++) {
-        try { n = await News.findById(id).select("-bodyImage1 -bodyImage2").lean(); dbOk = true; }
+        try { n = await News.findById(realId).select("-bodyImage1 -bodyImage2").lean(); dbOk = true; }
         catch (e) { await new Promise((rz) => setTimeout(rz, 150)); }
       }
-      if (n && n.status === "published") return articleMeta(n);
+      if (n && n.status === "published") return articleMeta(n, map);
       if (dbOk) {
         // DB answered and there is no published article with this id → real 404
         // (a 200 "Article not found" would be a Soft 404 to Google).
@@ -256,7 +271,7 @@ async function buildMeta(seg, page) {
       const pg = Math.max(1, parseInt(page, 10) || 1);
       const { rows, total } = await fetchNewsPage(pg);
       if (pg > 1) M.title = `Football News — page ${pg}`;
-      M.content = newsListContent(rows, pg, total);
+      M.content = newsListContent(rows, pg, total, map);
     }
     else if (INFO_CONTENT[r]) M.content = INFO_CONTENT[r];                        // about/contact/privacy/terms
     else M.content = genericContent(M.title, M.desc);                            // players/teams/… (heading, not empty)
@@ -277,12 +292,12 @@ function mediaUrl(col, id, field, val) {
   return val;
 }
 
-function articleMeta(n) {
+function articleMeta(n, map) {
   const desc = clip(n.metaDescription || cardSummary(n), 160);
   const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
   const M = {
     title: n.title, desc, type: "article", image: coverUrl,
-    content: articleContent(n, coverUrl),
+    content: articleContent(n, coverUrl, map),
     article: { published: n.publishedAt, modified: n.updatedAt || n.publishedAt, section: n.category },
   };
   M.jsonLd = {
@@ -295,7 +310,7 @@ function articleMeta(n) {
     "dateModified": n.updatedAt || n.publishedAt,
     "author": { "@type": "Organization", "name": n.author || SITE },
     "publisher": { "@type": "Organization", "name": SITE },
-    "mainEntityOfPage": { "@type": "WebPage", "@id": `${CANONICAL_BASE}/news/${n._id}` },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": `${CANONICAL_BASE}${newsUrl(n._id, map)}` },
     "articleSection": n.category,
     "keywords": (n.keywords || n.tags || []).join(", "),
   };
@@ -303,13 +318,13 @@ function articleMeta(n) {
 }
 
 // Minimal server-rendered article so crawlers read the content without JS.
-function articleContent(n, coverUrl) {
+function articleContent(n, coverUrl, map) {
   let dateStr = "";
   try { dateStr = new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) {}
   const cu = coverUrl != null ? coverUrl : mediaUrl("news", n._id, "cover", n.cover);
   const cover = cu ? `<figure class="cover"><img src="${esc(cu)}" alt="${esc(n.title)}"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
-  const body = linkify(n.body || `<p>${esc(n.excerpt || "")}</p>`); // authored HTML (trusted)
+  const body = linkify(n.body || `<p>${esc(n.excerpt || "")}</p>`, map); // authored HTML (trusted)
   return `<article class="wrap section article">
       <span class="badge-cat">${esc(n.category || "")}</span>
       <h1>${esc(n.title)}</h1>
@@ -377,6 +392,7 @@ async function renderPage(req, clientDir) {
   const seg = urlPath.split("/").filter(Boolean);
   const page = Math.max(1, parseInt((req.query && req.query.page) || "1", 10) || 1);
   const M = await buildMeta(seg, page);
+  if (M.redirect) return { redirect: M.redirect, status: 301 };
   // Canonical keeps ?page for paginated news so each page is its own URL.
   const isNewsPage = seg[0] === "news" && !seg[1] && page > 1;
   const canonicalUrl = CANONICAL_BASE + (urlPath === "/" ? "/" : urlPath) + (isNewsPage ? `?page=${page}` : "");

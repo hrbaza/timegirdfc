@@ -85,7 +85,12 @@ if (clientDirEnv) {
   const { renderPage } = require("./ssr");
   app.get("*", async (req, res) => {
     try {
-      const { html, status } = await renderPage(req, clientDir);
+      const { html, status, redirect } = await renderPage(req, clientDir);
+      if (redirect) {
+        // Old /news/<id> URL → its permanent /news/<title-slug> URL.
+        res.set("Cache-Control", "public, max-age=0, s-maxage=3600");
+        return res.redirect(301, redirect);
+      }
       res.set("Content-Type", "text/html; charset=utf-8");
       // Let Vercel's CDN cache the rendered HTML briefly (fast) but stay fresh so
       // new/edited posts show quickly. The client also re-hydrates from the API.

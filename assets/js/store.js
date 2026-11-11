@@ -248,6 +248,48 @@ TG.store = (function () {
     return all("news").filter((n) => n.status === "published")
       .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
   }
+  /* ---- article URLs: /news/<slug-of-the-title> ----
+     Keep slugOf + the duplicate-title rule in sync with server/src/utils/slug.js. */
+  const SLUG_EXTRA = { "ø": "o", "Ø": "o", "ß": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "đ": "d", "Đ": "d", "ł": "l", "Ł": "l", "ı": "i" };
+  function slugOf(title) {
+    let s = String(title || "")
+      .replace(/[øØßæÆœŒđĐłŁı]/g, (c) => SLUG_EXTRA[c])
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/['’‘`]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (s.length > 120) s = s.slice(0, 120).replace(/-[^-]*$/, "");
+    return s;
+  }
+  let slugCache = { key: null, byId: {}, bySlug: {} };
+  function slugMap() {
+    const list = all("news").filter((n) => n.status === "published");
+    const key = list.map((n) => n.id + "\u0001" + n.title + "\u0001" + n.publishedAt).join("\u0002");
+    if (key === slugCache.key) return slugCache;
+    const byId = {}, bySlug = {};
+    list.slice().sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt) || String(a.id).localeCompare(String(b.id)))
+      .forEach((n) => {
+        const base = slugOf(n.title) || String(n.id);
+        let slug = base, i = 2;
+        while (bySlug[slug]) slug = `${base}-${i++}`;
+        byId[n.id] = slug; bySlug[slug] = n.id;
+      });
+    slugCache = { key, byId, bySlug };
+    return slugCache;
+  }
+  // Public path of an article (falls back to its id while it is unpublished).
+  function newsHref(n) { const id = n && (n.id || n._id); return "/news/" + (slugMap().byId[id] || id); }
+  // Resolve a /news/<key> segment → { id, slug } or { id, redirect: slug } for an old id URL.
+  function resolveNewsKey(key) {
+    const m = slugMap();
+    if (m.bySlug[key]) return { id: m.bySlug[key], slug: key };
+    if (m.byId[key]) return { id: key, redirect: m.byId[key] };
+    const lower = slugOf(key);
+    if (m.bySlug[lower]) return { id: m.bySlug[lower], redirect: lower };
+    return { id: key };
+  }
   function newsCategories() { return ["Match Analysis", "Player Analysis", "Transfer News", "General Football News", "World Cup News"]; }
   // Fetch a single article by id. Returns {article} on success, {notFound:true}
   // ONLY on a real server 404, and {error} on a network/timeout (so the caller
@@ -421,7 +463,7 @@ TG.store = (function () {
     team, player, league, award, country, news1,
     playersByCountry, squad, countriesWithPlayers, awardsForPlayer,
     fixturesToday, fixturesUpcoming, fixturesRecent,
-    publishedNews, newsCategories, allTimeTable, worldCupTable, fetchArticle,
+    publishedNews, newsCategories, newsHref, resolveNewsKey, slugMap, allTimeTable, worldCupTable, fetchArticle,
     currentUser, signUp, signIn, signOut,
     forgotPassword, verifyResetOtp, resetPassword, resetPasswordForAdmin,
     currentAdmin, adminSignIn, adminSignOut, refreshAdminData,

@@ -34,7 +34,13 @@ const getAllAdmin = catchAsync(async (req, res) => {
 
 // GET /api/news/:id  (public; drafts hidden unless requester is admin/editor)
 const getOne = catchAsync(async (req, res, next) => {
-  const doc = await News.findById(req.params.id);
+  // Accepts the article id or its title slug (the public URL segment).
+  let doc = await News.findById(req.params.id);
+  if (!doc) {
+    const k = await require("../utils/slug").resolveNewsKey(req.params.id);
+    const realId = k.id || null;
+    if (realId) doc = await News.findById(realId);
+  }
   if (!doc) return next(new AppError("Article not found.", 404));
   const isStaff = req.user && (req.user.role === "Admin" || req.user.role === "Editor");
   if (doc.status !== "published" && !isStaff) return next(new AppError("Article not found.", 404));

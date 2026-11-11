@@ -40,7 +40,7 @@ TG.pages = (function () {
 
   /* ---- card renderers ---- */
   function newsCard(n) {
-    return `<a class="card reveal" href="/news/${n.id}">
+    return `<a class="card reveal" href="${S.newsHref(n)}">
       <div class="thumb">${thumb(n.category, n.cover)}<span class="tag chip">${esc(n.category)}</span></div>
       <div class="pad">
         <h3>${esc(n.title)}</h3>
@@ -118,7 +118,7 @@ TG.pages = (function () {
             </div>
           </div>
           <div>
-            ${feat ? `<a class="hero-card reveal" href="/news/${feat.id}">
+            ${feat ? `<a class="hero-card reveal" href="${S.newsHref(feat)}">
               <div class="cover">${thumb(feat.category, feat.cover)}<span class="hero-badge">Featured</span></div>
               <div class="body"><span class="chip">${esc(feat.category)}</span>
                 <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
@@ -200,6 +200,9 @@ TG.pages = (function () {
   function fixLinks(html) {
     let s = String(html == null ? "" : html);
     for (const [bad, good] of Object.entries(LINK_FIXES)) s = s.split(bad).join(good);
+    // Old id links (/news/n-abc1234) → the article's title URL, so no redirect hop.
+    const byId = S.slugMap().byId;
+    s = s.replace(/\/news\/(n-[a-z0-9]+)(?![a-z0-9-])/gi, (m, id) => (byId[id] ? "/news/" + byId[id] : m));
     s = s.replace(/\[([^\]\n]+)\]\(([^\s)]+)\)/g, (m, text, url) => (DEAD_LINK.test(url) ? text : m));
     return s.replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (m, url, text) => (DEAD_LINK.test(url) ? text : m));
   }
@@ -222,13 +225,16 @@ TG.pages = (function () {
     return Math.max(1, Math.round(words / 200));
   }
   async function newsPost(app, params) {
-    let n = S.news1(params.id);
+    // URL segment is the title slug; an old id URL is swapped for the slug URL in place.
+    const key = S.resolveNewsKey(params.id);
+    if (key.redirect && location.protocol !== "file:") history.replaceState({}, "", "/news/" + key.redirect + location.search + location.hash);
+    let n = S.news1(key.id);
     if (!n) {
       // Not in this browser's cache (brand-new article, or bootstrap not loaded
       // yet). Fetch it by id. CRUCIAL for SEO: on a network/timeout failure we
       // must NEVER clobber the server-rendered article — doing so made Google's
       // renderer see "Article not found" and flag the page as a Soft 404.
-      const res = await S.fetchArticle(params.id);
+      const res = await S.fetchArticle(key.id);
       if (res && res.article) n = res.article;
       else if (res && res.notFound) { app.innerHTML = `<section class="wrap section">${empty("Article not found.")}</section>`; return; }
       else { if (!app.querySelector(".article")) app.innerHTML = `<section class="wrap section"><div class="loader"><div class="ball">⚽</div></div></section>`; return; }
@@ -1035,7 +1041,7 @@ TG.pages = (function () {
           <button class="btn ghost" id="signout-btn">Sign out</button>
         </div>
         <div class="section" style="padding-bottom:0"><div class="section-head"><h2 style="font-size:1.2rem">Your recent comments</h2></div>
-          ${myComments.length ? myComments.slice(0,10).map((c) => { const n = S.news1(c.postId); return `<div class="comment"><div class="av">${initials(u.name)}</div><div><div class="who">${n ? `<a href="/news/${n.id}">${esc(n.title)}</a>` : "Post"} <span class="when">· ${U.timeAgo(c.createdAt)} · ${esc(c.status)}</span></div><p style="margin:.2rem 0 0">${esc(c.text)}</p></div></div>`; }).join("") : `<p class="muted">You haven't posted any comments yet.</p>`}
+          ${myComments.length ? myComments.slice(0,10).map((c) => { const n = S.news1(c.postId); return `<div class="comment"><div class="av">${initials(u.name)}</div><div><div class="who">${n ? `<a href="${S.newsHref(n)}">${esc(n.title)}</a>` : "Post"} <span class="when">· ${U.timeAgo(c.createdAt)} · ${esc(c.status)}</span></div><p style="margin:.2rem 0 0">${esc(c.text)}</p></div></div>`; }).join("") : `<p class="muted">You haven't posted any comments yet.</p>`}
         </div>
       </section>`;
     document.getElementById("signout-btn").onclick = () => {

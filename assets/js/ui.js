@@ -362,7 +362,7 @@ TG.ui = (function () {
     if (!r.news.length) { box.innerHTML = `<div class="empty" style="padding:2rem">No results for “${esc(q)}”.</div>`; return; }
     const grp = (title, items) => items.length ? `<div class="sr-group"><h4>${title}</h4>${items.join("")}</div>` : "";
     const item = (href, ic, t, s) => `<a class="sr-item" href="${href}" onclick="TG.ui.closeSearch()"><span class="ic">${ic}</span><span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></span></a>`;
-    box.innerHTML = grp("News", r.news.map((n) => item(`/news/${n.id}`, "📰", n.title, n.category)));
+    box.innerHTML = grp("News", r.news.map((n) => item(store.newsHref(n), "📰", n.title, n.category)));
   }
 
   /* ---- Cookie consent (GDPR / AdSense expectation) ---- */

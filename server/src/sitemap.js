@@ -56,8 +56,9 @@ async function buildSitemap() {
   try {
     const news = await News.find({ status: "published" })
       .select("_id updatedAt publishedAt").sort("-publishedAt").limit(5000).lean();
+    const { byId } = await require("./utils/slug").getSlugMap();
     for (const n of news) {
-      parts.push(urlEntry(`/news/${n._id}`, { lastmod: isoDate(n.updatedAt || n.publishedAt), changefreq: "weekly", priority: "0.8" }));
+      parts.push(urlEntry(`/news/${byId[n._id] || n._id}`, { lastmod: isoDate(n.updatedAt || n.publishedAt), changefreq: "weekly", priority: "0.8" }));
     }
   } catch (e) {
     console.error("sitemap DB error (serving static pages only):", e.message);
