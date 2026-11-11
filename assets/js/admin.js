@@ -14,14 +14,6 @@ TG.admin = (function () {
   const secHref = (k) => (STANDALONE ? "#/" + k : "#/admin/" + k);
   const siteHref = STANDALONE ? "/" : "#/";
 
-  const POS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
-  const opt = {
-    teams: () => S.all("teams").map((t) => ({ v: t.id, l: t.name })),
-    leagues: () => S.all("leagues").map((l) => ({ v: l.id, l: l.name })),
-    countries: () => S.all("countries").map((c) => ({ v: c.code, l: c.flag + " " + c.name })),
-    players: () => [{ v: "", l: "— none —" }].concat(S.all("players").map((p) => ({ v: p.id, l: p.name }))),
-  };
-
   /* ---- module schemas ---- */
   const SCHEMAS = {
     news: {
@@ -51,63 +43,6 @@ TG.admin = (function () {
       ],
       def: () => ({ title: "", category: "General Football News", excerpt: "", body: "<p></p>", metaDescription: "", keywords: [], cover: "", bodyImage1: "", bodyImage1Caption: "", bodyImage2: "", bodyImage2Caption: "", author: "Time Grid FC", tags: [], status: "published", publishedAt: new Date().toISOString() }),
     },
-    players: {
-      title: "Players", col: "players", icon: "🧍",
-      columns: [
-        { h: "Name", get: (r) => esc(r.name) },
-        { h: "Country", get: (r) => { const c = S.country(r.country); return c ? c.flag + " " + esc(c.name) : "—"; } },
-        { h: "Position", get: (r) => esc(r.pos) },
-        { h: "Club", get: (r) => { const t = S.team(r.club); return t ? esc(t.name) : "—"; } },
-      ],
-      fields: [
-        { n: "name", l: "Full name", t: "text", req: true },
-        { n: "country", l: "Nationality", t: "select", opts: opt.countries },
-        { n: "pos", l: "Position", t: "select", opts: () => POS.map((p) => ({ v: p, l: p })) },
-        { n: "jersey", l: "Jersey number", t: "number" },
-        { n: "club", l: "Current club", t: "select", opts: opt.teams },
-        { n: "dob", l: "Date of birth", t: "date" },
-        { n: "photo", l: "Photo", t: "image" },
-        { n: "career", l: "Career history", t: "json", help: 'Array e.g. [{"club":"FC Barcelona","years":"2004–2021"}]' },
-        { n: "stats", l: "Season statistics", t: "json", help: 'Array e.g. [{"season":"2023–24","club":"...","apps":40,"goals":30,"assists":10}]' },
-      ],
-      def: () => ({ name: "", country: "AR", pos: "Forward", jersey: 10, club: "", dob: "2000-01-01", photo: "", career: [], stats: [] }),
-    },
-    teams: {
-      title: "Teams & Clubs", col: "teams", icon: "🛡️",
-      columns: [
-        { h: "Name", get: (r) => `${r.crest || ""} ${esc(r.name)}` },
-        { h: "Country", get: (r) => { const c = S.country(r.country); return c ? c.flag + " " + esc(c.name) : "—"; } },
-        { h: "League", get: (r) => { const l = S.league(r.league); return l ? esc(l.name) : "—"; } },
-        { h: "Founded", get: (r) => r.founded },
-      ],
-      fields: [
-        { n: "name", l: "Club name", t: "text", req: true },
-        { n: "crest", l: "Crest (emoji or leave blank)", t: "text" },
-        { n: "founded", l: "Founded (year)", t: "number" },
-        { n: "stadium", l: "Home stadium", t: "text" },
-        { n: "country", l: "Country", t: "select", opts: opt.countries },
-        { n: "league", l: "League", t: "select", opts: opt.leagues },
-        { n: "honors", l: "Major honours", t: "csv", help: "Comma-separated, e.g. Premier League ×10, FA Cup ×7" },
-      ],
-      def: () => ({ name: "", crest: "", founded: 1900, stadium: "", country: "EN", league: "", honors: [] }),
-    },
-    leagues: {
-      title: "Leagues / Competitions", col: "leagues", icon: "🏅",
-      columns: [
-        { h: "Name", get: (r) => `${r.flag || ""} ${esc(r.name)}` },
-        { h: "Type", get: (r) => esc(r.type) },
-        { h: "Country/Region", get: (r) => esc(r.country) },
-        { h: "Champion", get: (r) => { const c = (r.champions || [])[0]; return c ? esc(c.team) + " (" + esc(c.season) + ")" : "—"; } },
-      ],
-      fields: [
-        { n: "name", l: "Name", t: "text", req: true },
-        { n: "country", l: "Country / Region", t: "text" },
-        { n: "flag", l: "Flag emoji", t: "text" },
-        { n: "type", l: "Type", t: "select", opts: () => ["Domestic League", "Domestic Cup", "Continental Cup", "International"].map((x) => ({ v: x, l: x })) },
-        { n: "champions", l: "Champions history", t: "json", help: 'Array e.g. [{"season":"2023–24","team":"Manchester City"}] — newest first.' },
-      ],
-      def: () => ({ name: "", country: "", flag: "🏆", type: "Domestic League", champions: [] }),
-    },
     worldcups: {
       title: "World Cup", col: "worldcups", icon: "🌍",
       columns: [
@@ -124,61 +59,6 @@ TG.admin = (function () {
         { n: "runnerUp", l: "Runner-up", t: "text" },
       ],
       def: () => ({ type: "men", year: 2026, host: "", champion: "", runnerUp: "" }),
-    },
-    awards: {
-      title: "Awards", col: "awards", icon: "🏆",
-      columns: [
-        { h: "Award", get: (r) => `${r.icon || ""} ${esc(r.name)}` },
-        { h: "Winners", get: (r) => (r.winners || []).length },
-        { h: "Latest", get: (r) => { const w = (r.winners || [])[0]; return w ? esc(w.playerName) + " (" + w.year + ")" : "—"; } },
-      ],
-      fields: [
-        { n: "name", l: "Award name", t: "text", req: true },
-        { n: "icon", l: "Icon (emoji)", t: "text" },
-        { n: "desc", l: "Description", t: "textarea" },
-        { n: "winners", l: "Winners history", t: "json", help: 'Array e.g. [{"year":2024,"player":"p-rodri","playerName":"Rodri","club":"Manchester City"}] — player id optional, links to profile.' },
-      ],
-      def: () => ({ name: "", icon: "🏆", desc: "", winners: [] }),
-    },
-    transfers: {
-      title: "Transfers", col: "transfers", icon: "🔄",
-      columns: [
-        { h: "Player", get: (r) => esc(r.playerName) },
-        { h: "From → To", get: (r) => `${esc(r.from)} → <b>${esc(r.to)}</b>` },
-        { h: "Type", get: (r) => esc(r.type) },
-        { h: "Date", get: (r) => U.fmtDate(r.date) },
-      ],
-      fields: [
-        { n: "playerName", l: "Player name", t: "text", req: true },
-        { n: "player", l: "Link to player profile", t: "select", opts: opt.players },
-        { n: "from", l: "From club", t: "text" },
-        { n: "to", l: "To club", t: "text" },
-        { n: "type", l: "Transfer type", t: "select", opts: () => [{ v: "Permanent", l: "Permanent" }, { v: "Loan", l: "Loan" }] },
-        { n: "fee", l: "Fee (optional)", t: "text" },
-        { n: "date", l: "Date", t: "date" },
-      ],
-      def: () => ({ playerName: "", player: "", from: "", to: "", type: "Permanent", fee: "", date: new Date().toISOString().slice(0, 10) }),
-    },
-    fixtures: {
-      title: "Fixtures", col: "fixtures", icon: "📅",
-      columns: [
-        { h: "Match", get: (r) => { const h = S.team(r.home), a = S.team(r.away); return `${h ? esc(h.name) : "?"} vs ${a ? esc(a.name) : "?"}`; } },
-        { h: "Date", get: (r) => U.fmtDate(r.date) + " " + esc(r.time || "") },
-        { h: "Status", get: (r) => `<span class="chip ${r.status === "live" ? "live" : ""}">${esc(r.status)}</span>` },
-        { h: "Score", get: (r) => (r.hs != null && r.as != null) ? `${r.hs}–${r.as}` : "—" },
-      ],
-      fields: [
-        { n: "home", l: "Home team", t: "select", opts: opt.teams },
-        { n: "away", l: "Away team", t: "select", opts: opt.teams },
-        { n: "date", l: "Date", t: "date" },
-        { n: "time", l: "Kick-off time", t: "time" },
-        { n: "venue", l: "Venue", t: "text" },
-        { n: "comp", l: "Competition", t: "select", opts: opt.leagues },
-        { n: "status", l: "Status", t: "select", opts: () => [{ v: "upcoming", l: "Upcoming" }, { v: "live", l: "Live" }, { v: "finished", l: "Finished" }] },
-        { n: "hs", l: "Home score", t: "number" },
-        { n: "as", l: "Away score", t: "number" },
-      ],
-      def: () => ({ home: "", away: "", date: new Date().toISOString().slice(0, 10), time: "20:00", venue: "", comp: "", status: "upcoming", hs: null, as: null }),
     },
     users: {
       title: "Users", col: "users", icon: "👥", adminOnly: true,
@@ -199,8 +79,7 @@ TG.admin = (function () {
 
   const SIDEBAR = [
     ["Overview", [["dashboard", "Dashboard", "📊"]]],
-    ["Content", [["news", "News & Blog", "📰"], ["videos", "Videos", "▶️"], ["transfers", "Transfers", "🔄"]]],
-    ["Football data", [["players", "Players", "🧍"], ["teams", "Teams", "🛡️"], ["leagues", "Leagues", "🏅"], ["worldcups", "World Cup", "🌍"], ["awards", "Awards", "🏆"], ["fixtures", "Fixtures", "📅"]]],
+    ["Content", [["news", "News & Blog", "📰"], ["videos", "Videos", "▶️"], ["worldcups", "World Cup", "🌍"]]],
     ["Community", [["comments", "Comments", "💬"], ["users", "Users", "👥"]]],
   ];
 
@@ -361,7 +240,6 @@ TG.admin = (function () {
     const posts = S.publishedNews().length;
     const drafts = S.all("news").filter((n) => n.status === "draft").length;
     const pending = S.pendingComments().length;
-    const upcoming = S.fixturesUpcoming().length;
     const kpi = (ic, n, l) => `<div class="card"><div class="ic">${ic}</div><div><div class="n">${n}</div><div class="l">${l}</div></div></div>`;
     main.innerHTML = `
       <div class="admin-top"><div><h1 style="margin:0">Dashboard</h1><p class="muted" style="margin:0">Welcome back, ${esc(admin.name)} · <span class="chip">${esc(admin.role)}</span></p></div>
@@ -370,9 +248,7 @@ TG.admin = (function () {
         ${kpi("📰", posts, "Published posts")}
         ${kpi("✍️", drafts, "Drafts")}
         ${kpi("💬", pending, "Pending comments")}
-        ${kpi("📅", upcoming, "Upcoming fixtures")}
-        ${kpi("🧍", S.all("players").length, "Players")}
-        ${kpi("🛡️", S.all("teams").length, "Teams")}
+        ${kpi("▶️", S.all("videos").length, "Videos")}
       </div>
       <div class="grid cols-2" style="align-items:start">
         <div class="card" style="padding:1.2rem">
@@ -383,12 +259,6 @@ TG.admin = (function () {
           <div class="section-head" style="margin-bottom:.8rem"><h2 style="font-size:1.1rem;margin:0">Pending comments</h2><a class="btn ghost sm" href="${secHref('comments')}">Moderate</a></div>
           ${pending ? S.pendingComments().slice(0, 5).map((c) => `<div style="padding:.5rem 0;border-bottom:1px solid var(--border)"><b>${esc(c.author)}</b> <span class="muted">on a post</span><br><span class="muted" style="font-size:.9rem">${esc(c.text)}</span></div>`).join("") : `<p class="muted">No pending comments 🎉</p>`}
         </div>
-      </div>
-      <div class="card" style="padding:1.2rem;margin-top:1.2rem">
-        <div class="section-head" style="margin-bottom:.8rem"><h2 style="font-size:1.1rem;margin:0">Upcoming fixtures</h2><a class="btn ghost sm" href="${secHref('fixtures')}">Manage</a></div>
-        <div class="table-wrap"><table class="tg"><thead><tr><th>Match</th><th>Date</th><th>Competition</th></tr></thead><tbody>
-          ${S.fixturesUpcoming().slice(0, 6).map((f) => { const h = S.team(f.home), a = S.team(f.away), l = S.league(f.comp); return `<tr><td>${h ? esc(h.name) : "?"} vs ${a ? esc(a.name) : "?"}</td><td>${U.fmtDay(f.date)} ${esc(f.time)}</td><td>${l ? esc(l.name) : ""}</td></tr>`; }).join("")}
-        </tbody></table></div>
       </div>
       <div style="margin-top:1.4rem;display:flex;gap:.6rem;flex-wrap:wrap">
         <span class="chip">${S.isApi() ? "🟢 Connected to MongoDB backend" : "🟠 Offline demo (localStorage)"}</span>
