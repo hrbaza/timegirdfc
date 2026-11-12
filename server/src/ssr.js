@@ -81,7 +81,10 @@ const NAV = [["", "Home"], ["news", "News"], ["worldcup", "World Cup"], ["videos
 
 function headerHtml() {
   const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
-  return `<nav class="nav"><div class="nav-inner">
+  // The ticker strip is here from the start so the page does not jump down
+  // when the client fills it with headlines (a layout shift, CLS).
+  return `<div class="ticker" id="tg-ticker"><div class="run"><span>⚽ Welcome to Time Grid FC — football news, stats &amp; analysis</span></div></div>
+    <nav class="nav"><div class="nav-inner">
       <a href="/" class="brand" aria-label="Time Grid FC home"><img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async"> <span class="brand-txt">Time<b>Grid</b>FC</span></a>
       <div class="nav-links">${links}</div>
     </div></nav>`;
