@@ -46,6 +46,8 @@ const getOne = catchAsync(async (req, res, next) => {
   if (!doc) return next(new AppError("Article not found.", 404));
   const isStaff = req.user && (req.user.role === "Admin" || req.user.role === "Editor");
   if (doc.status !== "published" && !isStaff) return next(new AppError("Article not found.", 404));
+  // Public copies may sit on the CDN for a minute; staff responses never do.
+  res.set("Cache-Control", isStaff ? "private, no-store" : "public, max-age=0, s-maxage=60, stale-while-revalidate=600");
   res.json({ status: "success", data: isStaff ? doc : toMediaUrls(doc) });
 });
 

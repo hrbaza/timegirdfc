@@ -96,7 +96,9 @@ if (clientDirEnv) {
       // new/edited posts show quickly. The client also re-hydrates from the API.
       // A genuine 404 is returned as a real 404 (never a Soft 404) and not cached.
       if (status === 404) res.set("Cache-Control", "no-store");
-      else res.set("Cache-Control", "public, max-age=0, s-maxage=20, stale-while-revalidate=40");
+      // The CDN refreshes it in the background after 2 minutes, so visitors
+      // (and Googlebot) almost never wait for the function and the database.
+      else res.set("Cache-Control", "public, max-age=0, s-maxage=120, stale-while-revalidate=86400");
       res.status(status || 200).send(html);
     } catch (e) {
       console.error("SSR error:", e.message);

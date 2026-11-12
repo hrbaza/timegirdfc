@@ -12,6 +12,8 @@ const fs = require("fs");
 const News = require("./models/News");
 const { getSlugMap, resolveNewsKey, publicNews } = require("./utils/slug");
 const { apply: applyLinkMap } = require("../../assets/js/linkmap.js"); // internal linking plan
+const IMG = require("../../assets/js/imgsrc.js"); // responsive image URLs (same as the client)
+const { leanNews } = require("./controllers/miscController");
 
 const SITE = "Time Grid FC";
 const CANONICAL_BASE = "https://www.timegridfc.com";
@@ -107,25 +109,29 @@ function fmtDateShort(d) {
   try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return ""; }
 }
 const newsUrl = (id, map) => "/news/" + ((map && map.byId[id]) || id);
+// Card / featured image, written exactly like the client (imgsrc.js) so the
+// browser reuses what this HTML already loaded when the SPA re-renders.
+function coverImg(n, kind, eager) {
+  if (!n.cover) return `<div class="ggrad" style="height:100%;background:linear-gradient(135deg,#0b6b3a,#16a34a)"></div>`;
+  return `<img ${IMG.attrs(n.cover, kind)} alt="${esc(n.title)}" ${eager ? `fetchpriority="high"` : `loading="lazy"`} decoding="async">`;
+}
 function newsCardHtml(n, map) {
-  return `<a class="card" href="${newsUrl(n._id, map)}">
-      <div class="thumb"><div class="ggrad" style="height:100%;background:linear-gradient(135deg,#0b6b3a,#16a34a)"></div></div>
+  return `<a class="card" href="${newsUrl(n._id || n.id, map)}">
+      <div class="thumb">${coverImg(n, "card")}<span class="tag chip">${esc(n.category || "")}</span></div>
       <div class="pad"><h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(cardSummary(n))}</p>
         <div class="meta">${esc(n.author || SITE)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
 }
+// Card lists come from leanNews: image fields are /api/media URLs, never base64.
 async function fetchNewsList(limit) {
-  try {
-    return await News.find(publicNews())
-      .select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").limit(limit).lean();
-  } catch (e) { return []; }
+  try { return await leanNews(publicNews(), { limit }); } catch (e) { return []; }
 }
 const NEWS_PER_PAGE = 12;
 async function fetchNewsPage(page) {
   try {
     const skip = (Math.max(1, page) - 1) * NEWS_PER_PAGE;
     const [rows, total] = await Promise.all([
-      News.find(publicNews()).select("title excerpt body metaDescription category author publishedAt").sort("-publishedAt").skip(skip).limit(NEWS_PER_PAGE).lean(),
+      leanNews(publicNews(), { skip, limit: NEWS_PER_PAGE }),
       News.countDocuments(publicNews()),
     ]);
     return { rows, total };
@@ -133,12 +139,21 @@ async function fetchNewsPage(page) {
 }
 function homeContent(news, map) {
   const cards = news.slice(0, 6).map((n) => newsCardHtml(n, map)).join("") || `<p class="muted">New articles are on the way.</p>`;
+  const feat = news[0];
+  // Same featured card as the client's home page, so the main image loads
+  // from this HTML instead of waiting for the app's data.
+  const featHtml = feat ? `<div><a class="hero-card" href="${newsUrl(feat._id || feat.id, map)}">
+        <div class="cover">${coverImg(feat, "feature", true)}<span class="hero-badge">Featured</span></div>
+        <div class="body"><span class="chip">${esc(feat.category || "")}</span>
+          <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
+          <p class="muted" style="margin:0;font-size:.92rem">${esc(feat.excerpt || "")}</p></div>
+      </a><div class="hero-blur"></div></div>` : "";
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
       <h1>Where football <span class="hl">lives</span>. News, stats &amp; every story.</h1>
       <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
       <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/videos">Watch videos</a></div>
-    </div></div></section>
+    </div>${featHtml}</div></section>
     <section class="wrap section" style="padding-top:0">
       <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news</a></div>
       <div class="grid cols-3">${cards}</div>
@@ -234,7 +249,9 @@ async function buildMeta(seg, page) {
   try { map = await getSlugMap(); } catch (e) { /* fall back to id URLs */ }
 
   if (r === "") {                                                                // homepage
-    M.content = homeContent(await fetchNewsList(6), map);
+    const latest = await fetchNewsList(6);
+    M.content = homeContent(latest, map);
+    if (latest[0] && latest[0].cover) M.preload = IMG.info(latest[0].cover, "feature");
     M.image = CANONICAL_BASE + "/assets/img/logo-512.webp";
     // Organization (logo) + WebSite (site name) — what Google uses for the
     // site name and logo shown next to search results.
@@ -269,9 +286,8 @@ async function buildMeta(seg, page) {
         // Related articles (same category first), mirroring the client's block.
         let related = [];
         try {
-          const sel = "title excerpt body metaDescription category author publishedAt";
-          related = await News.find(publicNews({ category: n.category }, [n._id])).select(sel).sort("-publishedAt").limit(3).lean();
-          if (!related.length) related = await News.find(publicNews(null, [n._id])).select(sel).sort("-publishedAt").limit(3).lean();
+          related = await leanNews(publicNews({ category: n.category }, [n._id]), { limit: 3 });
+          if (!related.length) related = await leanNews(publicNews(null, [n._id]), { limit: 3 });
         } catch (e) { /* render without it */ }
         return articleMeta(n, map, related);
       }
@@ -334,9 +350,12 @@ function articleMeta(n, map, related) {
   const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
   const pageUrl = `${CANONICAL_BASE}${newsUrl(n._id, map)}`;
   const kw = (n.keywords && n.keywords.length ? n.keywords : n.tags || []);
-  const published = isoDate(n.publishedAt), modified = isoDate(n.updatedAt) || published;
+  const published = isoDate(n.publishedAt);
+  // Never earlier than the publish date (a post saved just before its publish time).
+  const modified = [isoDate(n.updatedAt), published].filter(Boolean).sort().pop() || "";
   const M = {
     title: n.title, desc, type: "article", image: largeImage(coverUrl), imageAlt: n.title,
+    preload: coverUrl ? IMG.info(coverUrl, "hero") : null,
     keywords: Array.isArray(kw) ? kw.join(", ") : String(kw || ""),
     content: articleContent(n, coverUrl, map, related),
     article: { published, modified, section: n.category, tags: Array.isArray(n.tags) ? n.tags : [] },
@@ -372,7 +391,7 @@ function articleContent(n, coverUrl, map, related) {
   let dateStr = "";
   try { dateStr = new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) {}
   const cu = coverUrl != null ? coverUrl : mediaUrl("news", n._id, "cover", n.cover);
-  const cover = cu ? `<figure class="cover"><img src="${esc(cu)}" alt="${esc(n.title)}"></figure>` : "";
+  const cover = cu ? `<figure class="cover"><img ${IMG.attrs(cu, "hero")} alt="${esc(n.title)}" fetchpriority="high" decoding="async"></figure>` : "";
   const tags = (n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ");
   const body = linkify(applyLinkMap(String(n._id), n.body) || `<p>${esc(n.excerpt || "")}</p>`, map); // authored HTML (trusted)
   const rel = (related || []).length
@@ -423,6 +442,11 @@ function injectHead(html, M, canonicalUrl) {
     if (M.article.modified) tags.push(`<meta property="article:modified_time" content="${esc(M.article.modified)}" />`);
     tags.push(`<meta property="article:section" content="${esc(M.article.section || "")}" />`);
     (M.article.tags || []).forEach((t) => tags.push(`<meta property="article:tag" content="${esc(t)}" />`));
+  }
+  // Start the page's main image (the LCP) download as early as possible.
+  if (M.preload && M.preload.src) {
+    tags.push(`<link rel="preload" as="image" href="${esc(M.preload.src)}"` +
+      (M.preload.srcset ? ` imagesrcset="${esc(M.preload.srcset)}" imagesizes="${esc(M.preload.sizes)}"` : "") + ` fetchpriority="high" />`);
   }
   // "</" is escaped so article text can never close the script tag early.
   if (M.jsonLd) tags.push(`<script type="application/ld+json" id="tg-jsonld">${JSON.stringify(M.jsonLd).replace(/<\//g, "<\\/")}</script>`);

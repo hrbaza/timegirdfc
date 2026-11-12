@@ -16,9 +16,13 @@ TG.pages = (function () {
     "General Football News": { e: "📰", g: "135deg,#0f766e,#14b8a6" },
     "World Cup News": { e: "🌍", g: "135deg,#9d174d,#ef4444" },
   };
-  function thumb(cat, url, emoji, alt) {
+  // kind sizes the image ("card", "feature" or "hero", see imgsrc.js); eager
+  // marks the main image of the page, which loads first instead of lazily.
+  function thumb(cat, url, emoji, alt, kind, eager) {
     const c = CAT[cat] || { e: emoji || "⚽", g: "135deg,#0b6b3a,#16a34a" };
-    if (url) return `<img src="${esc(url)}" alt="${esc(alt || "")}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=&quot;ggrad&quot; style=&quot;height:100%;display:grid;place-items:center;background:linear-gradient(${c.g});font-size:2.4rem&quot;>${c.e}</div>'">`;
+    const src = window.TG_IMG ? TG_IMG.attrs(url, kind || "card") : `src="${esc(url)}"`;
+    const load = eager ? `fetchpriority="high"` : `loading="lazy"`;
+    if (url) return `<img ${src} alt="${esc(alt || "")}" ${load} decoding="async" onerror="this.parentNode.innerHTML='<div class=&quot;ggrad&quot; style=&quot;height:100%;display:grid;place-items:center;background:linear-gradient(${c.g});font-size:2.4rem&quot;>${c.e}</div>'">`;
     return `<div class="ggrad" style="height:100%;display:grid;place-items:center;background:linear-gradient(${c.g});font-size:2.6rem">${c.e}</div>`;
   }
   function crumbs(items) {
@@ -119,7 +123,7 @@ TG.pages = (function () {
           </div>
           <div>
             ${feat ? `<a class="hero-card reveal" href="${S.newsHref(feat)}">
-              <div class="cover">${thumb(feat.category, feat.cover)}<span class="hero-badge">Featured</span></div>
+              <div class="cover">${thumb(feat.category, feat.cover, "", feat.title, "feature", true)}<span class="hero-badge">Featured</span></div>
               <div class="body"><span class="chip">${esc(feat.category)}</span>
                 <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
                 <p class="muted" style="margin:0;font-size:.92rem">${esc(feat.excerpt||"")}</p></div>
@@ -229,6 +233,17 @@ TG.pages = (function () {
     const key = S.resolveNewsKey(params.id);
     if (key.redirect && location.protocol !== "file:") history.replaceState({}, "", "/news/" + key.redirect + location.search + location.hash);
     let n = S.news1(key.id);
+    // The bootstrap list has no article bodies, so the body is fetched here.
+    // While it loads, keep the server-rendered article if it is this one;
+    // otherwise (navigating from another page) show the loader.
+    if (n && n.body == null) {
+      const h1 = app.querySelector(".article h1");
+      if (!h1 || h1.textContent.trim() !== String(n.title || "").trim()) {
+        app.innerHTML = `<section class="wrap section"><div class="loader"><div class="ball">⚽</div></div></section>`;
+        window.scrollTo(0, 0);
+      }
+      n = null;
+    }
     if (!n) {
       // Not in this browser's cache (brand-new article, or bootstrap not loaded
       // yet). Fetch it by id. CRUCIAL for SEO: on a network/timeout failure we
@@ -276,7 +291,7 @@ TG.pages = (function () {
         const makeFig = (im) => {
           const fig = document.createElement("figure");
           fig.className = "in-body";
-          fig.innerHTML = `<img src="${esc(im.src)}" alt="${esc(im.cap || n.title)}" loading="lazy">` +
+          fig.innerHTML = `<img ${window.TG_IMG ? TG_IMG.attrs(im.src, "hero") : `src="${esc(im.src)}"`} alt="${esc(im.cap || n.title)}" loading="lazy" decoding="async">` +
             (im.cap ? `<figcaption class="muted">${esc(im.cap)}</figcaption>` : "");
           return fig;
         };
@@ -303,7 +318,7 @@ TG.pages = (function () {
           · <span>${mins} min read</span>
         </div>
         <div class="tag-row">${(n.tags || []).map((t) => `<span class="chip">#${esc(t)}</span>`).join(" ")}</div>
-        <figure class="cover">${thumb(n.category, n.cover, "", n.title)}<figcaption class="muted">${esc(n.title)}</figcaption></figure>
+        <figure class="cover">${thumb(n.category, n.cover, "", n.title, "hero", true)}<figcaption class="muted">${esc(n.title)}</figcaption></figure>
         ${n.excerpt ? `<p class="lede">${esc(n.excerpt)}</p>` : ""}
         ${toc}
         <div class="content">${bodyHtml}</div>

@@ -10,6 +10,7 @@ const Transfer = require("../models/Transfer");
 const Video = require("../models/Video");
 const Comment = require("../models/Comment");
 const { catchAsync, AppError } = require("../utils/AppError");
+const IMG = require("../../../assets/js/imgsrc.js"); // responsive image widths + URLs
 
 // GET /api/search?q=  (FR-12: grouped global search)
 const search = catchAsync(async (req, res) => {
@@ -37,12 +38,19 @@ const search = catchAsync(async (req, res) => {
 
 // Build a news-list aggregation that excludes base64 blobs but keeps everything
 // the SPA needs, with image fields turned into media URLs.
-async function leanNews(match) {
+// opts.body: false drops the article body (it fills an empty excerpt first);
+// opts.skip / opts.limit page the list.
+async function leanNews(match, opts) {
+  opts = opts || {};
   const notData = (f) => ({ $cond: [{ $regexMatch: { input: { $ifNull: ["$" + f, ""] }, regex: "^data:" } }, "", { $ifNull: ["$" + f, ""] }] });
   const has = (f) => ({ $ne: [{ $ifNull: ["$" + f, ""] }, ""] });
+  const page = [];
+  if (opts.skip) page.push({ $skip: opts.skip });
+  if (opts.limit) page.push({ $limit: opts.limit });
   const rows = await News.aggregate([
     { $match: match || {} },
     { $sort: { publishedAt: -1 } },
+    ...page,
     { $project: {
         title: 1, slug: 1, category: 1, author: 1, tags: 1, excerpt: 1, body: 1,
         metaDescription: 1, keywords: 1, status: 1, publishedAt: 1, updatedAt: 1, createdAt: 1,
@@ -57,6 +65,13 @@ async function leanNews(match) {
     n.bodyImage1 = n.hasBI1 ? `/api/media/news/${n._id}/bodyImage1` : "";
     n.bodyImage2 = n.hasBI2 ? `/api/media/news/${n._id}/bodyImage2` : "";
     delete n._id; delete n.coverExt; delete n.hasCover; delete n.hasBI1; delete n.hasBI2;
+    if (opts.body === false) {
+      if (!String(n.excerpt || "").trim()) {
+        const t = String(n.body || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        n.excerpt = t.length > 160 ? t.slice(0, 159).trimEnd() + "…" : t;
+      }
+      delete n.body;
+    }
   });
   return rows;
 }
@@ -79,27 +94,20 @@ async function leanVideos() {
 }
 
 // GET /api/bootstrap  (one lightweight payload of all PUBLIC data for the SPA cache)
+// Only what the public pages use. Article bodies are left out (an article page
+// loads its own body from /api/news/:id), and so is the data of the removed
+// players / teams / leagues / awards / transfers / schedule sections.
 const bootstrap = catchAsync(async (req, res) => {
-  const [countries, teams, players, leagues, worldcups, awards, fixtures, news, transfers, videos, comments] =
-    await Promise.all([
-      Country.find().sort("name"),
-      Team.find().sort("name"),
-      Player.find().sort("name"),
-      League.find(),
-      WorldCup.find().sort("-year"),
-      Award.find(),
-      Fixture.find().sort("date time"),
-      leanNews(require("../utils/slug").publicNews()),
-      Transfer.find().sort("-date"),
-      leanVideos(),
-      Comment.find({ status: "approved" }).sort("-createdAt"),
-    ]);
-  // Article lists must always be fresh — never served stale by CDN/browser.
-  res.set("Cache-Control", "no-store");
-  res.json({
-    status: "success",
-    data: { countries, teams, players, leagues, worldcups, awards, fixtures, news, transfers, videos, comments },
-  });
+  const [worldcups, news, videos, comments] = await Promise.all([
+    WorldCup.find().sort("-year"),
+    leanNews(require("../utils/slug").publicNews(), { body: false }),
+    leanVideos(),
+    Comment.find({ status: "approved" }).sort("-createdAt"),
+  ]);
+  // The CDN keeps it for a minute and refreshes it in the background, so a new
+  // or edited post shows within about a minute; browsers always ask again.
+  res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=600");
+  res.json({ status: "success", data: { worldcups, news, videos, comments } });
 });
 
 // GET /api/media/:col/:id/:field  — serve a stored image (base64 → bytes, or
@@ -115,16 +123,38 @@ const media = catchAsync(async (req, res, next) => {
   const doc = await cfg.model.findById(id).select(field).lean();
   const val = doc && doc[field];
   if (!val) return res.status(404).end();
+  // ?w=<width> asks for a resized WebP copy (only the widths in IMG.WIDTHS).
+  const w = parseInt(req.query.w, 10);
+  const width = IMG.WIDTHS.includes(w) ? w : 0;
   if (/^https?:\/\//i.test(val)) {
     res.set("Cache-Control", "public, max-age=86400");
-    return res.redirect(302, val);
+    return res.redirect(302, width ? IMG.sized(val, width) : val);
   }
   const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(val);
   if (!m) return res.status(404).end();
-  res.set("Content-Type", m[1] || "image/jpeg");
+  const buf = Buffer.from(m[2], "base64");
   res.set("Cache-Control", "public, max-age=31536000, immutable");
-  res.send(Buffer.from(m[2], "base64"));
+  const sharp = width && getSharp();
+  if (sharp) {
+    try {
+      const out = await sharp(buf).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
+      res.set("Content-Type", "image/webp");
+      return res.send(out);
+    } catch (e) { console.error("Image resize failed:", e.message); /* fall through to the original */ }
+  }
+  res.set("Content-Type", m[1] || "image/jpeg");
+  res.send(buf);
 });
+
+// sharp is a native module: load it on first use, and if it cannot load,
+// serve original images instead of failing.
+let sharpLib;
+function getSharp() {
+  if (sharpLib === undefined) {
+    try { sharpLib = require("sharp"); } catch (e) { console.error("sharp unavailable:", e.message); sharpLib = null; }
+  }
+  return sharpLib;
+}
 
 // GET /api/health
 const health = (req, res) => res.json({ status: "success", message: "Time Grid FC API is running", time: new Date().toISOString() });
