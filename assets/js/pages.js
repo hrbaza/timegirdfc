@@ -122,7 +122,7 @@ TG.pages = (function () {
             </div>
           </div>
           <div>
-            ${feat ? `<a class="hero-card reveal" href="${S.newsHref(feat)}">
+            ${feat ? `<a class="hero-card" href="${S.newsHref(feat)}">
               <div class="cover">${thumb(feat.category, feat.cover, "", feat.title, "feature", true)}<span class="hero-badge">Featured</span></div>
               <div class="body"><span class="chip">${esc(feat.category)}</span>
                 <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
