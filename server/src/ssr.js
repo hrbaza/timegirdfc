@@ -83,7 +83,7 @@ function headerHtml() {
   const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
   // The ticker strip is here from the start so the page does not jump down
   // when the client fills it with headlines (a layout shift, CLS).
-  return `<div class="ticker" id="tg-ticker"><div class="run"><span>⚽ Welcome to Time Grid FC — football news, stats &amp; analysis</span></div></div>
+  return `<div class="ticker" id="tg-ticker"><div class="run"><span>⚽ Welcome to Time Grid FC — football news, analysis &amp; videos</span></div></div>
     <nav class="nav"><div class="nav-inner">
       <a href="/" class="brand" aria-label="Time Grid FC home"><img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async"> <span class="brand-txt">Time<b>Grid</b>FC</span></a>
       <div class="nav-links">${links}</div>
@@ -95,7 +95,7 @@ function footerHtml() {
   return `<div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:.6rem"><img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async"> <span class="brand-txt">Time<b>Grid</b>FC</span></div>
-        <p class="muted" style="max-width:34ch">Football news, stats &amp; community — the official companion to the Time Grid FC YouTube channel.</p>
+        <p class="muted" style="max-width:34ch">Football news, match analysis &amp; videos — the official companion to the Time Grid FC YouTube channel.</p>
         <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
       </div>
       ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
@@ -153,7 +153,7 @@ function homeContent(news, map) {
       </a><div class="hero-blur"></div></div>` : "";
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
-      <h1>Where football <span class="hl">lives</span>. News, stats &amp; every story.</h1>
+      <h1>Where football <span class="hl">lives</span>. News, analysis &amp; every story.</h1>
       <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
       <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/videos">Watch videos</a></div>
     </div>${featHtml}</div></section>
@@ -414,7 +414,7 @@ function articleContent(n, coverUrl, map, related) {
 
 /* ---- inject meta + content into the index.html template ---- */
 function injectHead(html, M, canonicalUrl) {
-  const full = M.title ? `${esc(M.title)} — ${SITE}` : `${SITE} — Football News, Stats & Community`;
+  const full = M.title ? `${esc(M.title)} — ${SITE}` : `${SITE} — Football News, Analysis & Videos`;
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${full}</title>`);
   html = html.replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${esc(M.desc)}" />`);
   // Drop the static default OG tags so we can inject accurate per-page ones.

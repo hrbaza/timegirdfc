@@ -107,7 +107,7 @@ if (clientDirEnv) {
       res.send(
         '<!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8">' +
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-        '<title>Time Grid FC — Football News, Stats & Community</title>' +
+        '<title>Time Grid FC — Football News, Analysis & Videos</title>' +
         '<link rel="stylesheet" href="/assets/css/styles.css"></head><body>' +
         '<header id="tg-header"></header>' +
         '<div id="tg-search-overlay" class="search-overlay" hidden></div>' +

@@ -1,15 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+  <!-- Google Analytics (GA4). Visitors who clicked "Decline" on the cookie bar
+       are not tracked (analytics_storage denied); ads consent is untouched. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BMDWQGNZ0G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    var tgConsent = null;
+    try { tgConsent = localStorage.getItem("tg_cookie_consent"); } catch (e) {}
+    gtag('consent', 'default', { analytics_storage: tgConsent === 'declined' ? 'denied' : 'granted' });
+    gtag('js', new Date());
+    gtag('config', 'G-BMDWQGNZ0G');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Time Grid FC — Football News, Stats & Community</title>
+  <title>Time Grid FC — Football News, Analysis & Videos</title>
   <meta name="description" content="Time Grid FC — daily football news, match analysis, World Cup history and videos." />
   <meta name="keywords" content="football news, transfer news, football transfers, match analysis, football tactics, Premier League, La Liga, Serie A, Bundesliga, Champions League, World Cup 2026, World Cup history, Ballon d&#39;Or, football videos, Time Grid FC" />
   <meta name="author" content="Time Grid FC" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta property="og:title" content="Time Grid FC" />
-  <meta property="og:description" content="Football news, stats & community — the official companion to the Time Grid FC YouTube channel." />
+  <meta property="og:description" content="Football news, match analysis & videos — the official companion to the Time Grid FC YouTube channel." />
   <meta property="og:type" content="website" />
   <!-- Pinterest site verification -->
   <meta name="p:domain_verify" content="d63a25d6442edc2e735ae6ccdcb4b745"/>
@@ -23,7 +35,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/styles.css?v=5.12" />
+  <link rel="stylesheet" href="/assets/css/styles.css?v=5.13" />
   <!--SSR_HEAD-->
 </head>
 <body>
@@ -58,14 +70,14 @@
 
   <!-- Scripts: order matters (plain globals, no modules). Root-absolute paths so
        deep URLs like /news/<id> load assets correctly (serve over http, not file://). -->
-  <script src="/assets/js/seed.js?v=5.12"></script>
-  <script src="/assets/js/api.js?v=5.12"></script>
-  <script src="/assets/js/store.js?v=5.12"></script>
-  <script src="/assets/js/ui.js?v=5.12"></script>
-  <script src="/assets/js/linkmap.js?v=5.12"></script>
-  <script src="/assets/js/imgsrc.js?v=5.12"></script>
-  <script src="/assets/js/pages.js?v=5.12"></script>
-  <script src="/assets/js/admin.js?v=5.12"></script>
-  <script src="/assets/js/app.js?v=5.12"></script>
+  <script src="/assets/js/seed.js?v=5.13"></script>
+  <script src="/assets/js/api.js?v=5.13"></script>
+  <script src="/assets/js/store.js?v=5.13"></script>
+  <script src="/assets/js/ui.js?v=5.13"></script>
+  <script src="/assets/js/linkmap.js?v=5.13"></script>
+  <script src="/assets/js/imgsrc.js?v=5.13"></script>
+  <script src="/assets/js/pages.js?v=5.13"></script>
+  <script src="/assets/js/admin.js?v=5.13"></script>
+  <script src="/assets/js/app.js?v=5.13"></script>
 </body>
 </html>

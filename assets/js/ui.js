@@ -90,7 +90,7 @@ TG.ui = (function () {
   }
 
   function setMeta(title, desc) {
-    const full = title ? `${title} — ${SITE}` : `${SITE} — Football News, Stats & Community`;
+    const full = title ? `${title} — ${SITE}` : `${SITE} — Football News, Analysis & Videos`;
     document.title = full;
     if (desc) metaName("description", desc);
     // Open Graph / Twitter for a standard page
@@ -256,7 +256,7 @@ TG.ui = (function () {
     if (!host) return;
     // Show real, recent article headlines (no demo scores/fixtures/dates).
     const items = store.publishedNews().slice(0, 6).map((n) => `<span>📰 ${esc(n.title)}</span>`);
-    if (!items.length) items.push("<span>⚽ Welcome to Time Grid FC — football news, stats &amp; analysis</span>");
+    if (!items.length) items.push("<span>⚽ Welcome to Time Grid FC — football news, analysis &amp; videos</span>");
     const run = items.join("");
     host.innerHTML = `<div class="run">${run}${run}</div>`;
   }
@@ -290,7 +290,7 @@ TG.ui = (function () {
       <div class="wrap foot">
         <div>
           <div class="brand" style="margin-bottom:.6rem">${LOGO_IMG} <span class="brand-txt">Time<b>Grid</b>FC</span></div>
-          <p class="muted" style="max-width:34ch">Football news, stats & community — the official companion to the Time Grid FC YouTube channel.</p>
+          <p class="muted" style="max-width:34ch">Football news, match analysis & videos — the official companion to the Time Grid FC YouTube channel.</p>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
         </div>
         ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
@@ -405,7 +405,12 @@ TG.ui = (function () {
         <button class="btn sm" id="cb-yes">Accept</button>
       </span>`;
     document.body.appendChild(bar);
-    const close = (v) => { try { localStorage.setItem("tg_cookie_consent", v); } catch (e) {} bar.remove(); };
+    const close = (v) => {
+      try { localStorage.setItem("tg_cookie_consent", v); } catch (e) {}
+      // Google Analytics follows the choice straight away.
+      if (typeof window.gtag === "function") window.gtag("consent", "update", { analytics_storage: v === "accepted" ? "granted" : "denied" });
+      bar.remove();
+    };
     bar.querySelector("#cb-yes").onclick = () => close("accepted");
     bar.querySelector("#cb-no").onclick = () => close("declined");
   }

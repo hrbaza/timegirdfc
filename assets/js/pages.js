@@ -102,7 +102,7 @@ TG.pages = (function () {
      HOME (FR-1)
      ======================================================================= */
   function home(app) {
-    U.setMeta("", "Football news, stats & community — the official companion to the Time Grid FC YouTube channel.");
+    U.setMeta("", "Football news, match analysis & videos — the official companion to the Time Grid FC YouTube channel.");
     const feat = S.publishedNews()[0];
     // Latest News shows the most recent posts (including the newest), so a freshly
     // published blog appears here immediately.
@@ -114,7 +114,7 @@ TG.pages = (function () {
         <div class="hero-grid">
           <div>
             <span class="eyebrow">Time Grid FC · Football Hub</span>
-            <h1>Where football <span class="hl">lives</span>.<br>News, stats & every story.</h1>
+            <h1>Where football <span class="hl">lives</span>.<br>News, analysis & every story.</h1>
             <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
             <div class="hero-cta">
               <a class="btn" href="/news">Read the latest ${icon("arrow")}</a>
