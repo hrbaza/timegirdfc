@@ -153,7 +153,7 @@ function homeContent(news, map) {
       </a><div class="hero-blur"></div></div>` : "";
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
-      <h1>Where football <span class="hl">lives</span>. News, analysis &amp; every story.</h1>
+      <h1>Where football <span class="hl">lives</span>.<br>Football news &amp; analysis.</h1>
       <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
       <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/videos">Watch videos</a></div>
     </div>${featHtml}</div></section>
