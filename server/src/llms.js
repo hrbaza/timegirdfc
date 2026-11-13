@@ -88,7 +88,7 @@ async function buildLlmsFull() {
       lines.push(`## ${n.title}`);
       lines.push(`URL: ${BASE}/news/${byId[n._id] || n._id}`);
       if (n.category) lines.push(`Category: ${n.category}`);
-      lines.push(`Author: ${n.author || SITE}`);
+      lines.push(`Author: ${(() => { const a = require("../../assets/js/infopages.js").authorOf(n); return a.role ? `${a.name}, ${a.role}` : a.name; })()}`);
       lines.push(`Published: ${fmtDate(n.publishedAt)}${n.updatedAt && n.updatedAt !== n.publishedAt ? " (updated " + fmtDate(n.updatedAt) + ")" : ""}`);
       if (n.keywords && n.keywords.length) lines.push(`Keywords: ${n.keywords.join(", ")}`);
       lines.push("");

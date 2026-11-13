@@ -8,6 +8,20 @@
   const UPDATED = "13 November 2026";
   const mail = `<a href="mailto:${EMAIL}">${EMAIL}</a>`;
 
+  // The site's editor. Articles saved with the default author ("Time Grid FC"
+  // or empty) are shown with this byline; any other author name is kept.
+  const AUTHOR = {
+    name: "Rehan",
+    role: "Editor",
+    url: "/about#rehan",
+    bio: "Rehan is the editor of Time Grid FC. Rehan plans, writes and edits the site's football news, match previews, reports and analysis, and works on the Time Grid FC YouTube channel.",
+  };
+  const isDefault = (a) => !a || /^time\s*grid\s*fc$/i.test(String(a).trim());
+  // { name, role, url } for an article; role and url only for the editor.
+  function authorOf(n) {
+    return isDefault(n && n.author) ? AUTHOR : { name: String(n.author).trim(), role: "", url: "" };
+  }
+
   const PAGES = {
     about: {
       title: "About Us",
@@ -19,6 +33,10 @@
       <p>The site brings that work together in one place: daily football news, match previews and reports, transfer stories, tactical explainers, the history of the FIFA World Cup, and every video from the channel.</p>
 
       <h2>Who runs this site</h2>
+      <div class="author-box card" id="rehan" style="margin:1rem 0">
+        <div class="av">R</div>
+        <div><div class="who">${AUTHOR.name}, ${AUTHOR.role}</div><p class="muted" style="margin:.2rem 0 0">${AUTHOR.bio}</p></div>
+      </div>
       <p>Time Grid FC is run by the same small team that makes the YouTube channel. We are football fans who follow the Premier League, La Liga, the Bundesliga, Serie A, the Champions League and international football every week. We are not affiliated with, endorsed by, or officially connected to any club, league or governing body. Club and competition names are used only to identify them.</p>
 
       <h2>How we write our articles</h2>
@@ -155,7 +173,7 @@
     },
   };
 
-  const api = { PAGES, EMAIL, UPDATED };
+  const api = { PAGES, EMAIL, UPDATED, AUTHOR, authorOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TG_INFO = api;
 })(typeof window !== "undefined" ? window : this);

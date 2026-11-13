@@ -49,7 +49,7 @@ TG.pages = (function () {
       <div class="pad">
         <h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(summary(n))}</p>
-        <div class="meta">${esc(n.author)} · ${U.timeAgo(n.publishedAt)}</div>
+        <div class="meta">${esc(TG_INFO.authorOf(n).name)} · ${U.timeAgo(n.publishedAt)}</div>
       </div></a>`;
   }
   function videoCard(v) {
@@ -263,6 +263,7 @@ TG.pages = (function () {
     U.setArticleSEO(n);
 
     const mins = readingTime(n.body);
+    const au = TG_INFO.authorOf(n); // byline: the editor for default-author posts
     const related = S.publishedNews().filter((x) => x.id !== n.id && x.category === n.category).slice(0, 3);
     const rel = related.length ? related : S.publishedNews().filter((x) => x.id !== n.id).slice(0, 3);
     const updated = n.updatedAt && n.updatedAt !== n.publishedAt;
@@ -311,8 +312,8 @@ TG.pages = (function () {
         <span class="badge-cat">${esc(n.category)}</span>
         <h1>${esc(n.title)}</h1>
         <div class="byline">
-          <span class="chip">${initials(n.author)}</span>
-          <span>By <b>${esc(n.author)}</b></span> ·
+          <span class="chip">${initials(au.name)}</span>
+          <span>By ${au.url ? `<a href="${au.url}" rel="author"><b>${esc(au.name)}</b></a>, ${esc(au.role)}` : `<b>${esc(au.name)}</b>`}</span> ·
           <span>Published ${U.fmtDate(n.publishedAt)}</span>
           ${updated ? ` · <span>Updated ${U.fmtDate(n.updatedAt)}</span>` : ""}
           · <span>${mins} min read</span>
@@ -323,8 +324,8 @@ TG.pages = (function () {
         ${toc}
         <div class="content">${bodyHtml}</div>
         <div class="author-box card">
-          <div class="av">${initials(n.author)}</div>
-          <div><div class="who">${esc(n.author)}</div><p class="muted" style="margin:.2rem 0 0">Football writing from the Time Grid FC editorial team — analysis, news and features. <a href="/about">About us</a> · <a href="/contact">Contact</a></p></div>
+          <div class="av">${initials(au.name)}</div>
+          <div><div class="who">${esc(au.name)}${au.role ? ", " + esc(au.role) : ""}</div><p class="muted" style="margin:.2rem 0 0">${au.url ? esc(TG_INFO.AUTHOR.bio) : "Football writing for Time Grid FC."} <a href="${au.url || "/about"}">About us</a> · <a href="/contact">Contact</a></p></div>
         </div>
         <div id="comments"></div>
       </article>

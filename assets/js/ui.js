@@ -154,7 +154,10 @@ TG.ui = (function () {
       "image": img ? [img] : undefined,
       "datePublished": published || undefined,
       "dateModified": modified || undefined,
-      "author": { "@type": "Organization", "name": n.author || SITE, "url": BASE + "/about" },
+      "author": (function () {
+        const a = window.TG_INFO ? TG_INFO.authorOf(n) : { name: n.author || SITE };
+        return a.url ? { "@type": "Person", "name": a.name, "jobTitle": a.role, "url": BASE + a.url, "worksFor": { "@type": "Organization", "name": SITE, "url": BASE + "/" } } : { "@type": "Person", "name": a.name };
+      })(),
       "publisher": { "@type": "Organization", "name": SITE, "url": BASE + "/", "logo": { "@type": "ImageObject", "url": BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
       "articleSection": n.category,

@@ -120,6 +120,9 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
   ok((art.text.match(/<div class="thumb"><img /g) || []).length === 3, "related cards have images");
   const ld = JSON.parse(art.text.match(/<script type="application\/ld\+json" id="tg-jsonld">([\s\S]*?)<\/script>/)[1].replace(/<\\\//g, "</"));
   ok(ld[0].dateModified >= ld[0].datePublished, "dateModified >= datePublished");
+  ok(ld[0].author["@type"] === "Person" && ld[0].author.name === "Rehan" && /\/about#rehan$/.test(ld[0].author.url), "schema author is Person Rehan");
+  ok(/By <a href="\/about#rehan" rel="author"><b>Rehan<\/b><\/a>, Editor/.test(art.text), "article byline: Rehan, Editor");
+  ok(/<meta name="author" content="Rehan" \/>/.test(art.text), "author meta tag");
 
   const list = await get("/news");
   ok(list.r.status === 200 && (list.text.match(/<div class="thumb"><img /g) || []).length === 8, "news list SSR cards have images");

@@ -124,7 +124,7 @@ function newsCardHtml(n, map) {
       <div class="thumb">${coverImg(n, "card")}<span class="tag chip">${esc(n.category || "")}</span></div>
       <div class="pad"><h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(cardSummary(n))}</p>
-        <div class="meta">${esc(n.author || SITE)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
+        <div class="meta">${esc(INFO.authorOf(n).name)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
 }
 // Card lists come from leanNews: image fields are /api/media URLs, never base64.
 async function fetchNewsList(limit) {
@@ -296,6 +296,19 @@ function largeImage(url) {
   return /^https:\/\/images\.unsplash\.com\//i.test(url || "") ? url.replace(/([?&])w=\d+/, "$1w=1200") : url;
 }
 
+// Byline and schema author: the editor (with a link to the bio) for articles
+// saved with the default author, otherwise the name stored on the article.
+function bylineHtml(n) {
+  const a = INFO.authorOf(n);
+  return a.url ? `<a href="${a.url}" rel="author"><b>${esc(a.name)}</b></a>, ${esc(a.role)}` : `<b>${esc(a.name)}</b>`;
+}
+function authorLd(n) {
+  const a = INFO.authorOf(n);
+  return a.url
+    ? { "@type": "Person", "name": a.name, "jobTitle": a.role, "url": CANONICAL_BASE + a.url, "worksFor": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/" } }
+    : { "@type": "Person", "name": a.name };
+}
+
 function articleMeta(n, map, related) {
   const desc = clip(n.metaDescription || cardSummary(n), 160);
   const coverUrl = mediaUrl("news", n._id, "cover", n.cover);
@@ -307,6 +320,7 @@ function articleMeta(n, map, related) {
   const M = {
     title: n.title, desc, type: "article", image: largeImage(coverUrl), imageAlt: n.title,
     preload: coverUrl ? IMG.info(coverUrl, "hero") : null,
+    author: INFO.authorOf(n).name,
     keywords: Array.isArray(kw) ? kw.join(", ") : String(kw || ""),
     content: articleContent(n, coverUrl, map, related),
     article: { published, modified, section: n.category, tags: Array.isArray(n.tags) ? n.tags : [] },
@@ -319,7 +333,7 @@ function articleMeta(n, map, related) {
     "image": coverUrl ? [largeImage(coverUrl)] : undefined,
     "datePublished": published || undefined,
     "dateModified": modified || undefined,
-    "author": { "@type": "Organization", "name": n.author || SITE, "url": CANONICAL_BASE + "/about" },
+    "author": authorLd(n),
     "publisher": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/", "logo": { "@type": "ImageObject", "url": CANONICAL_BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 } },
     "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
     "articleSection": n.category,
@@ -352,7 +366,7 @@ function articleContent(n, coverUrl, map, related) {
       <nav class="muted" aria-label="Breadcrumb" style="font-size:.85rem;margin-bottom:.6rem"><a href="/">Home</a> › <a href="/news">News</a></nav>
       <span class="badge-cat">${esc(n.category || "")}</span>
       <h1>${esc(n.title)}</h1>
-      <div class="byline"><span>By <b>${esc(n.author || SITE)}</b></span> · <span>${esc(dateStr)}</span></div>
+      <div class="byline"><span>By ${bylineHtml(n)}</span> · <span>${esc(dateStr)}</span></div>
       <div class="tag-row">${tags}</div>
       ${cover}
       ${n.excerpt ? `<p class="lede">${esc(n.excerpt)}</p>` : ""}
@@ -382,6 +396,7 @@ function injectHead(html, M, canonicalUrl) {
     `<link rel="canonical" href="${esc(canonicalUrl)}" />`,
   ];
   // Per-article keywords replace the sitewide default list.
+  if (M.author) html = html.replace(/<meta name="author"[^>]*>/, `<meta name="author" content="${esc(M.author)}" />`);
   if (M.keywords) html = html.replace(/<meta name="keywords"[^>]*>/, `<meta name="keywords" content="${esc(M.keywords)}" />`);
   if (M.image) {
     tags.push(`<meta property="og:image" content="${esc(M.image)}" />`);
