@@ -67,3 +67,4 @@ Allow: /
 
 # Sitemap
 Sitemap: https://www.timegridfc.com/sitemap.xml
+Sitemap: https://www.timegridfc.com/news-sitemap.xml

@@ -167,7 +167,7 @@ TG.pages = (function () {
     let page = Math.max(1, parseInt(qp.get("page"), 10) || 1);
     const SIZE = 12;
     const cats = ["All", ...S.newsCategories()];
-    U.setMeta("News & Blog" + (page > 1 ? ` — page ${page}` : ""), "The latest football news, match analysis, and player breakdowns from Time Grid FC.");
+    U.setMeta(page > 1 ? `Football News — page ${page}` : "Football News & Analysis", "The latest football news, transfer stories, match previews, reports and tactical analysis from Time Grid FC.");
 
     let list = S.publishedNews();
     if (cat !== "All") list = list.filter((n) => n.category === cat);
@@ -264,8 +264,11 @@ TG.pages = (function () {
 
     const mins = readingTime(n.body);
     const au = TG_INFO.authorOf(n); // byline: the editor for default-author posts
-    const related = S.publishedNews().filter((x) => x.id !== n.id && x.category === n.category).slice(0, 3);
-    const rel = related.length ? related : S.publishedNews().filter((x) => x.id !== n.id).slice(0, 3);
+    // Same picks as the server: 3 newest + 3 older, same category first.
+    const all = S.publishedNews().filter((x) => x.id !== n.id);
+    const sameCat = all.filter((x) => x.category === n.category);
+    const pool = sameCat.length >= 6 ? sameCat : sameCat.concat(all.filter((x) => x.category !== n.category).slice(0, 30));
+    const rel = window.TG_LINKMAP && TG_LINKMAP.related ? TG_LINKMAP.related(n.id, pool, 6) : pool.slice(0, 3);
     const updated = n.updatedAt && n.updatedAt !== n.publishedAt;
 
     // Add ids to <h2> headings and build a table of contents (router-safe anchors).
@@ -626,7 +629,7 @@ TG.pages = (function () {
      WORLD CUP (FR-8)
      ======================================================================= */
   function worldcup(app) {
-    U.setMeta("World Cup History", "Every FIFA World Cup — Men's and Women's — champions, hosts, and all-time winners.");
+    U.setMeta("World Cup History: Every Winner & Host", "Every FIFA World Cup, men's and women's: hosts, champions, runners-up and the all-time winners table.");
     let type = "men";
     app.innerHTML = `
       <section class="wrap section">
@@ -738,7 +741,7 @@ TG.pages = (function () {
      VIDEOS (FR-3)
      ======================================================================= */
   function videos(app) {
-    U.setMeta("Videos", "Every Time Grid FC video — match analysis, player breakdowns and news. Watch on YouTube.");
+    U.setMeta("Football Videos & Match Analysis", "Match analysis, player breakdowns and football news videos from the Time Grid FC YouTube channel.");
     let cat = "All";
     const cats = ["All", "Match Analysis", "Player Analysis", "News"];
     app.innerHTML = `

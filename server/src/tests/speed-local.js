@@ -20,6 +20,7 @@ const DATA = { News: NEWS, Video: [{ _id: "v-1", title: "V", url: "https://youtu
 function match(doc, q) {
   return Object.entries(q || {}).every(([k, v]) => {
     if (v && typeof v === "object" && "$nin" in v) return !v.$nin.includes(doc[k]);
+    if (v && typeof v === "object" && "$gte" in v) return doc[k] >= v.$gte;
     if (v instanceof RegExp) return v.test(doc[k]);
     if (k === "$or") return v.some((s) => match(doc, s));
     return doc[k] === v;
@@ -117,7 +118,7 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
   const art = await get("/news/" + slug);
   ok(art.r.status === 200 && /fetchpriority="high"/.test(art.text), "article SSR cover has fetchpriority");
   ok(/<link rel="preload" as="image"/.test(art.text), "article SSR preloads the cover");
-  ok((art.text.match(/<div class="thumb"><img /g) || []).length === 3, "related cards have images");
+  ok((art.text.match(/<div class="thumb"><img /g) || []).length === 6, "related cards have images");
   const ld = JSON.parse(art.text.match(/<script type="application\/ld\+json" id="tg-jsonld">([\s\S]*?)<\/script>/)[1].replace(/<\\\//g, "</"));
   ok(ld[0].dateModified >= ld[0].datePublished, "dateModified >= datePublished");
   ok(ld[0].author["@type"] === "Person" && ld[0].author.name === "Rehan" && /\/about#rehan$/.test(ld[0].author.url), "schema author is Person Rehan");
@@ -143,6 +144,24 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
   ok(good.status === 503 && (DATA.ContactMessage || []).some((m) => m.name === "Fan"), "contact: saved; 503 because SMTP is not set locally (" + good.status + ")");
   const SLUG = require("../utils/slug");
   ok(SLUG.MERGED["n-s21ix27"] === "n-k7n4sqy" && SLUG.NO_COVER["n-97n42r2"], "merge and no-cover lists load");
+
+  // Score fixes: feeds, 404 noindex, hub share image + schema, titles, related links.
+  const rss = await get("/rss.xml");
+  ok(rss.r.status === 200 && /<rss version="2.0"/.test(rss.text) && (rss.text.match(/<item>/g) || []).length === 8 && /<dc:creator>Rehan, Editor<\/dc:creator>/.test(rss.text), "rss.xml lists the articles");
+  const nsm = await get("/news-sitemap.xml");
+  ok(nsm.r.status === 200 && /<news:publication_date>/.test(nsm.text) && (nsm.text.match(/<url>/g) || []).length === 8, "news-sitemap.xml lists the last 48 hours");
+  const nf = await get("/no-such-page");
+  ok(nf.r.status === 404 && /<meta name="robots" content="noindex, follow" \/>/.test(nf.text) && !/og-default/.test(nf.text), "404 page is noindex and has no share image");
+  const vids = await get("/videos");
+  ok(/og:image" content="https:\/\/www.timegridfc.com\/assets\/img\/og-default.png"/.test(vids.text) && /"CollectionPage"/.test(vids.text), "videos hub: default share image + CollectionPage");
+  ok(/<title>Football Videos &amp; Match Analysis — Time Grid FC<\/title>/.test(vids.text), "videos hub title");
+  ok(/"ItemList"/.test(list.text), "news hub has ItemList schema");
+  ok(/"AboutPage"/.test(about.text) && /"ContactPage"/.test(contactPage.text), "about/contact page schema");
+  ok(/<title>Test Article Number 1 — Time Grid FC<\/title>/.test(art.text), "short headline keeps the brand suffix");
+  const INFO = require("../../../assets/js/infopages.js");
+  ok(INFO.pageTitle("x".repeat(70)) === "x".repeat(70), "long headline drops the brand suffix");
+  ok((art.text.match(/<div class="thumb"><img /g) || []).length === 6, "article shows 6 related articles");
+  ok(/width="960" height="480"/.test(art.text), "cover image has width/height");
 
   if (process.env.KEEP) { console.log("Server kept running on " + B); return; } // KEEP=1: look at it in a browser
   srv.close();

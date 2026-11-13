@@ -11,7 +11,7 @@ const fs = require("fs");
 
 const News = require("./models/News");
 const { getSlugMap, resolveNewsKey, publicNews, NO_COVER } = require("./utils/slug");
-const { apply: applyLinkMap } = require("../../assets/js/linkmap.js"); // internal linking plan
+const { apply: applyLinkMap, related: relatedPick } = require("../../assets/js/linkmap.js"); // internal linking plan
 const IMG = require("../../assets/js/imgsrc.js"); // responsive image URLs (same as the client)
 const INFO = require("../../assets/js/infopages.js"); // about / contact / privacy / terms text
 const { leanNews } = require("./controllers/miscController");
@@ -64,9 +64,9 @@ function linkify(html, slugMap) {
 
 /* ---- static meta for list / info pages ---- */
 const SIMPLE = {
-  news: ["News & Blog", "Latest football news, match analysis and features from Time Grid FC."],
-  worldcup: ["World Cup History", "Every FIFA World Cup — hosts, champions and records."],
-  videos: ["Videos", "Match analysis and football videos from the Time Grid FC channel."],
+  news: ["Football News & Analysis", "The latest football news, transfer stories, match previews, reports and tactical analysis from Time Grid FC."],
+  worldcup: ["World Cup History: Every Winner & Host", "Every FIFA World Cup, men's and women's: hosts, champions, runners-up and the all-time winners table."],
+  videos: ["Football Videos & Match Analysis", "Match analysis, player breakdowns and football news videos from the Time Grid FC YouTube channel."],
   about: [INFO.PAGES.about.title, INFO.PAGES.about.desc],
   contact: [INFO.PAGES.contact.title, INFO.PAGES.contact.desc],
   privacy: [INFO.PAGES.privacy.title, INFO.PAGES.privacy.desc],
@@ -237,8 +237,13 @@ async function buildMeta(seg, page) {
         // Related articles (same category first), mirroring the client's block.
         let related = [];
         try {
-          related = await leanNews(publicNews({ category: n.category }, [n._id]), { limit: 3 });
-          if (!related.length) related = await leanNews(publicNews(null, [n._id]), { limit: 3 });
+          // Same category first, topped up from all articles when the category is small.
+          let pool = await leanNews(publicNews({ category: n.category }, [n._id]), { body: false });
+          if (pool.length < 6) {
+            const seen = new Set(pool.map((x) => x.id));
+            pool = pool.concat((await leanNews(publicNews(null, [n._id]), { body: false, limit: 30 })).filter((x) => !seen.has(x.id)));
+          }
+          related = relatedPick(String(n._id), pool, 6);
         } catch (e) { /* render without it */ }
         return articleMeta(n, map, related);
       }
@@ -265,8 +270,19 @@ async function buildMeta(seg, page) {
       const { rows, total } = await fetchNewsPage(pg);
       if (pg > 1) M.title = `Football News — page ${pg}`;
       M.content = newsListContent(rows, pg, total, map);
+      const pageUrl = CANONICAL_BASE + "/news" + (pg > 1 ? `?page=${pg}` : "");
+      M.jsonLd = [collectionLd(pageUrl, M.title, M.desc, rows.map((n) => ({ url: CANONICAL_BASE + newsUrl(n._id || n.id, map), name: n.title })))];
     }
-    else if (INFO_CONTENT[r]) M.content = INFO_CONTENT[r];                        // about/contact/privacy/terms
+    else if (r === "videos" || r === "worldcup") M.jsonLd = [collectionLd(CANONICAL_BASE + "/" + r, M.title, M.desc)];
+    else if (INFO_CONTENT[r]) {                                                  // about/contact/privacy/terms
+      M.content = INFO_CONTENT[r];
+      const type = { about: "AboutPage", contact: "ContactPage" }[r] || "WebPage";
+      M.jsonLd = [{ "@context": "https://schema.org", "@type": type, "name": M.title, "description": M.desc, "url": CANONICAL_BASE + "/" + r,
+        "isPartOf": { "@type": "WebSite", "name": SITE, "url": CANONICAL_BASE + "/" },
+        ...(r === "about" ? { "mainEntity": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/", "logo": CANONICAL_BASE + "/assets/img/logo-512.webp", "email": INFO.EMAIL, "sameAs": ["https://www.youtube.com/@timegrid_fc"] } } : {}),
+        ...(r === "contact" ? { "mainEntity": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/", "email": INFO.EMAIL, "contactPoint": { "@type": "ContactPoint", "contactType": "editorial", "email": INFO.EMAIL } } } : {}),
+      }];
+    }
     else M.content = genericContent(M.title, M.desc);                            // players/teams/… (heading, not empty)
   } else if (r) {
     M.httpStatus = 404;
@@ -274,6 +290,14 @@ async function buildMeta(seg, page) {
     M.content = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>Page not found.</p><p class="help"><a href="/">← Back home</a></p></div></section>`;
   }
   return M;
+}
+
+// CollectionPage schema for a list page; items (optional) become an ItemList.
+function collectionLd(url, name, description, items) {
+  const o = { "@context": "https://schema.org", "@type": "CollectionPage", "name": name, "description": description, "url": url,
+    "isPartOf": { "@type": "WebSite", "name": SITE, "url": CANONICAL_BASE + "/" } };
+  if (items && items.length) o.mainEntity = { "@type": "ItemList", "itemListElement": items.map((it, i) => ({ "@type": "ListItem", "position": i + 1, "url": it.url, "name": it.name })) };
+  return o;
 }
 
 // Base64 images live in Mongo; expose them as absolute media URLs (never embed
@@ -376,9 +400,13 @@ function articleContent(n, coverUrl, map, related) {
 
 /* ---- inject meta + content into the index.html template ---- */
 function injectHead(html, M, canonicalUrl) {
-  const full = M.title ? `${esc(M.title)} — ${SITE}` : `${SITE} — Football News, Analysis & Videos`;
+  const full = esc(INFO.pageTitle(M.title)); // brand suffix only when it fits in 60 characters
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${full}</title>`);
   html = html.replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${esc(M.desc)}" />`);
+  // Not-found pages answer 404 and ask search engines not to index them.
+  if (M.httpStatus === 404) html = html.replace(/<meta name="robots"[^>]*>/, `<meta name="robots" content="noindex, follow" />`);
+  // Pages without their own picture share the site's default card image.
+  if (!M.image && M.httpStatus !== 404) { M.image = CANONICAL_BASE + "/assets/img/og-default.png"; M.imageAlt = M.imageAlt || "Time Grid FC — football news, match analysis & videos"; }
   // Drop the static default OG tags so we can inject accurate per-page ones.
   html = html.replace(/\s*<meta property="og:title"[^>]*>/, "");
   html = html.replace(/\s*<meta property="og:description"[^>]*>/, "");

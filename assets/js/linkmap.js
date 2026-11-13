@@ -117,7 +117,23 @@
     return s;
   }
 
-  const api = { MAP, apply };
+  // Related articles for an article page: the 3 newest others in the list,
+  // plus 3 older ones picked from the article's id (stable, and different for
+  // each article), so older articles keep getting internal links too.
+  // list: same-category articles first, newest first; each has id or _id.
+  function related(currentId, list, n) {
+    n = n || 6;
+    const others = (list || []).filter((x) => String(x.id || x._id) !== String(currentId));
+    const fresh = others.slice(0, Math.min(3, n));
+    const rest = others.slice(fresh.length);
+    let h = 0;
+    for (const ch of String(currentId)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const older = [];
+    for (let i = 0; i < rest.length && older.length < n - fresh.length; i++) older.push(rest[(h + i * 7) % rest.length]);
+    return fresh.concat([...new Set(older)]);
+  }
+
+  const api = { MAP, apply, related };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TG_LINKMAP = api;
 })(typeof window !== "undefined" ? window : this);

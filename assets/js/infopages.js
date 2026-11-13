@@ -173,7 +173,16 @@
     },
   };
 
-  const api = { PAGES, EMAIL, UPDATED, AUTHOR, authorOf };
+  // <title> text: "<page> — Time Grid FC" while that fits in 60 characters
+  // (about what Google shows); longer headlines go without the brand suffix.
+  const SITE = "Time Grid FC";
+  function pageTitle(title) {
+    if (!title) return `${SITE} — Football News, Analysis & Videos`;
+    const full = `${title} — ${SITE}`;
+    return full.length <= 60 ? full : title;
+  }
+
+  const api = { PAGES, EMAIL, UPDATED, AUTHOR, authorOf, pageTitle };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TG_INFO = api;
 })(typeof window !== "undefined" ? window : this);

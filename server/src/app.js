@@ -25,7 +25,10 @@ app.use((req, res, next) => {
 });
 
 // --- Security & parsing ---
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false, hsts: { maxAge: 31536000, includeSubDomains: true } }));
+// Turn off device features the site never uses. Ad-related features (topics,
+// attribution reporting, ad auctions) are left alone so AdSense keeps working.
+app.use((req, res, next) => { res.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()"); next(); });
 
 const origins = (process.env.CLIENT_ORIGIN || "")
   .split(",")
@@ -65,6 +68,20 @@ if (clientDirEnv) {
     res.set("Content-Type", "application/xml; charset=utf-8");
     res.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
     res.send(xml);
+  });
+  // Google News sitemap (last 48 hours) and RSS feed (latest 30 articles).
+  app.get(["/news-sitemap.xml", "/rss.xml"], async (req, res) => {
+    try {
+      const feeds = require("./feeds");
+      const rss = req.path === "/rss.xml";
+      const xml = rss ? await feeds.buildRss() : await feeds.buildNewsSitemap();
+      res.set("Content-Type", rss ? "application/rss+xml; charset=utf-8" : "application/xml; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=3600");
+      res.send(xml);
+    } catch (e) {
+      console.error("feed error:", e.message);
+      res.status(503).set("Retry-After", "120").type("text/plain").send("Feed temporarily unavailable.");
+    }
   });
   // llms.txt / llms-full.txt — structured content for AI answer engines.
   app.get(["/llms.txt", "/llms-full.txt"], async (req, res) => {

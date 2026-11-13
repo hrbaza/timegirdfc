@@ -538,3 +538,6 @@ table.tg tr:last-child td{ border-bottom:none; }
   .nav-links a.active{ color:#fff; background:linear-gradient(135deg, var(--green-600), var(--green-800)); }
 }
 @media (max-width:380px){ .brand-txt{ font-size:1rem; } }
+
+/* Article cover: fill the 16:8 box (the img now carries width/height attributes). */
+.article .cover img{ display:block; width:100%; height:100%; object-fit:cover; }

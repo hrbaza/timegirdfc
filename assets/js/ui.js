@@ -90,7 +90,7 @@ TG.ui = (function () {
   }
 
   function setMeta(title, desc) {
-    const full = title ? `${title} — ${SITE}` : `${SITE} — Football News, Analysis & Videos`;
+    const full = window.TG_INFO ? TG_INFO.pageTitle(title) : (title ? `${title} — ${SITE}` : SITE);
     document.title = full;
     if (desc) metaName("description", desc);
     // Open Graph / Twitter for a standard page
@@ -129,7 +129,7 @@ TG.ui = (function () {
     if (img && img.startsWith("/")) img = BASE + img;
     if (/^https:\/\/images\.unsplash\.com\//i.test(img)) img = img.replace(/([?&])w=\d+/, "$1w=1200");
     const kw = (n.keywords && n.keywords.length ? n.keywords : n.tags || []).join(", ");
-    document.title = `${n.title} — ${SITE}`;
+    document.title = window.TG_INFO ? TG_INFO.pageTitle(n.title) : `${n.title} — ${SITE}`;
     metaName("description", desc);
     if (kw) metaName("keywords", kw);
     metaProp("og:type", "article");

@@ -7,9 +7,9 @@
 (function (root) {
   const WIDTHS = [320, 480, 640, 960, 1200];
   const KINDS = {
-    card: { set: [320, 480, 640], def: 480, sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" },
-    feature: { set: [480, 640, 960], def: 640, sizes: "(max-width: 1024px) 100vw, 600px" },
-    hero: { set: [640, 960, 1200], def: 960, sizes: "(max-width: 800px) 100vw, 760px" },
+    card: { w: 480, h: 270, set: [320, 480, 640], def: 480, sizes: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" },
+    feature: { w: 640, h: 360, set: [480, 640, 960], def: 640, sizes: "(max-width: 1024px) 100vw, 600px" },
+    hero: { w: 960, h: 480, set: [640, 960, 1200], def: 960, sizes: "(max-width: 800px) 100vw, 760px" },
   };
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -36,10 +36,11 @@
     if (!resizable(url)) return { src: url, srcset: "", sizes: "" };
     return { src: sized(url, k.def), srcset: k.set.map((w) => sized(url, w) + " " + w + "w").join(", "), sizes: k.sizes };
   }
-  // The src/srcset/sizes attributes as an HTML string (values escaped).
+  // The src/srcset/sizes attributes as an HTML string (values escaped), plus
+  // width/height matching the box shape so the browser reserves the space.
   function attrs(url, kind) {
-    const i = info(url, kind);
-    return `src="${esc(i.src)}"` + (i.srcset ? ` srcset="${esc(i.srcset)}" sizes="${esc(i.sizes)}"` : "");
+    const i = info(url, kind), k = KINDS[kind] || KINDS.card;
+    return `src="${esc(i.src)}"` + (i.srcset ? ` srcset="${esc(i.srcset)}" sizes="${esc(i.sizes)}"` : "") + ` width="${k.w}" height="${k.h}"`;
   }
 
   const api = { WIDTHS, KINDS, sized, info, attrs };
