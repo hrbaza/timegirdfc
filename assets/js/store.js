@@ -265,7 +265,7 @@ TG.store = (function () {
   }
   // Merged duplicate articles → the article they were merged into
   // (keep in sync with MERGED in server/src/utils/slug.js).
-  const MERGED = { "n-oy6pnh1": "n-nr5sp9c" };
+  const MERGED = { "n-oy6pnh1": "n-nr5sp9c", "n-g2l116k": "n-f5obqs9", "n-s21ix27": "n-k7n4sqy", "n-3irkrth": "n-drqk4s2" };
   let slugCache = { key: null, byId: {}, bySlug: {} };
   function slugMap() {
     const list = all("news").filter((n) => n.status === "published" && !MERGED[n.id]);

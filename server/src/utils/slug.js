@@ -15,8 +15,16 @@ const MAX_LEN = 120;
 // Keep in sync with MERGED in assets/js/store.js.
 const MERGED = {
   "n-oy6pnh1": "n-nr5sp9c", // Liverpool vs Man City preview (duplicate) -> newer preview
+  "n-g2l116k": "n-f5obqs9", // "Kane Set to Break England Caps Record" -> England vs Croatia preview
+  "n-s21ix27": "n-k7n4sqy", // Ballon d'Or "Kane the 2/5 Favourite" (betting odds) -> four-way race
+  "n-3irkrth": "n-drqk4s2", // Messi "The Last Tango" -> "Messi's Last Dance at the Monumental"
 };
 const MERGED_IDS = Object.keys(MERGED);
+// Articles whose cover image must not be shown (no rights to it). The article
+// itself stays; its cover is dropped everywhere and its media URL returns 404.
+const NO_COVER = {
+  "n-97n42r2": "Sky Sports TV screenshot", // Neville slams Man Utd as 'classless'
+};
 // Mongo filter for articles the public may list. extraIds: more ids to leave out.
 function publicNews(extra, extraIds) {
   return Object.assign({ status: "published", _id: { $nin: MERGED_IDS.concat(extraIds || []) } }, extra || {});
@@ -93,4 +101,4 @@ async function resolveNewsKey(key) {
   return {};
 }
 
-module.exports = { slugOf, assignSlugs, getSlugMap, resolveNewsKey, MERGED, publicNews };
+module.exports = { slugOf, assignSlugs, getSlugMap, resolveNewsKey, MERGED, NO_COVER, publicNews };

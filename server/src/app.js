@@ -9,6 +9,9 @@ const apiRouter = require("./routes");
 const { notFound, errorHandler } = require("./middleware/error");
 
 const app = express();
+// Behind Vercel's proxy: take the visitor's IP from X-Forwarded-For, so rate
+// limits count each visitor separately instead of the proxy as one client.
+app.set("trust proxy", 1);
 
 // --- Canonical host: non-www → www (301), EXCEPT /ads.txt which must return
 // 200 directly on both hosts for the AdSense crawler. (Only takes effect if the

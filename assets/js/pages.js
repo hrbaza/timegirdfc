@@ -197,7 +197,7 @@ TG.pages = (function () {
   }
 
   // Known mistyped article links in stored bodies → the correct article.
-  const LINK_FIXES = { "/news/n-3irkrkh": "/news/n-3irkrth" };
+  const LINK_FIXES = { "/news/n-3irkrkh": "/news/n-drqk4s2" };
   // Sections that were removed from the site; links to them render as plain text.
   const DEAD_LINK = /^(https?:\/\/(www\.)?timegridfc\.com)?\/(player|players|team|teams|leagues|awards|transfers|schedule|daily)(\/|$|[?#])/i;
   const OWN_SITE = /^https?:\/\/(www\.)?timegridfc\.com(\/|$)/i;
@@ -765,138 +765,44 @@ TG.pages = (function () {
   /* =======================================================================
      ABOUT / CONTACT
      ======================================================================= */
-  function about(app) {
-    U.setMeta("About Us", "About Time Grid FC — an independent football news, analysis and statistics hub, and the companion site to the Time Grid FC YouTube channel.");
+  /* ---- About / Contact / Privacy / Terms: text from infopages.js (shared with the server) ---- */
+  function infoPage(app, key) {
+    const pg = TG_INFO.PAGES[key];
+    U.setMeta(pg.title, pg.desc);
     app.innerHTML = `
       <section class="wrap section article">
-        ${crumbs([["Home", "/"], ["About"]])}
-        <span class="eyebrow">About Us</span>
-        <h1>About Time Grid FC</h1>
-        <div class="content">
-          <p>Time Grid FC is an independent football content hub and the companion website to the <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">Time Grid FC YouTube channel</a>, which produces match analysis, player breakdowns, and football news for a growing community of fans.</p>
-          <p>Our goal is to be a genuinely useful football destination: original daily news and analysis, a searchable database of players and clubs organised by country, match schedules, the history of major leagues and the FIFA World Cup, individual awards, transfer news, and every video from our channel — all in one place.</p>
-          <h2>Who runs this site</h2>
-          <p>Time Grid FC is an independent project created and edited by the Time Grid FC team. All editorial articles on this site are written originally by our team. We are not affiliated with, endorsed by, or officially connected to any football club, league, or governing body; club and competition names are used descriptively for identification only.</p>
-          <h2>Editorial standards</h2>
-          <p>We aim for accuracy and clearly separate reporting from opinion and analysis. If you spot an error, please contact us and we will review and correct it promptly.</p>
-          <h2>Media &amp; image credits</h2>
-          <p>Player photographs are sourced from <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a> under their respective Creative Commons licences; editorial and cover imagery is provided by <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> under the Unsplash licence; country flags are from <a href="https://flagcdn.com" target="_blank" rel="noopener">flagcdn</a>. Video thumbnails belong to their respective owners and are shown only to link viewers to the original videos on YouTube.</p>
-          <h2>Contact</h2>
-          <p>Have a story tip, a correction, or a question? Visit our <a href="/contact">Contact page</a> or reach us any time at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
-        </div>
+        ${crumbs([["Home", "/"], [pg.title]])}
+        <span class="eyebrow">${pg.eyebrow}</span>
+        <h1>${pg.h1}</h1>
+        <div class="content">${pg.html}</div>
       </section>`;
+    if (location.hash) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
   }
+  function about(app) { infoPage(app, "about"); }
+  function privacy(app) { infoPage(app, "privacy"); }
+  function terms(app) { infoPage(app, "terms"); }
 
-  /* ---- Contact (AdSense: clear contact method) ---- */
+  /* ---- Contact: the form posts to /api/contact, which emails the team ---- */
   function contact(app) {
-    U.setMeta("Contact Us", "Get in touch with the Time Grid FC team — story tips, corrections, feedback and enquiries.");
-    app.innerHTML = `
-      <section class="wrap section article">
-        ${crumbs([["Home", "/"], ["Contact"]])}
-        <span class="eyebrow">Contact Us</span>
-        <h1>Get in touch</h1>
-        <div class="content">
-          <p>We'd love to hear from you — whether it's a story tip, a correction to something we've published, feedback on the site, or a general enquiry.</p>
-          <p><b>Email:</b> <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a><br>
-             <b>YouTube:</b> <a href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">@timegrid_fc</a></p>
-          <p>Or send us a message directly:</p>
-        </div>
-        <form class="card" style="padding:1.4rem;max-width:520px" id="contact-form">
-          <div class="field"><label>Name</label><input class="input" required></div>
-          <div class="field"><label>Email</label><input class="input" type="email" required></div>
-          <div class="field"><label>Message</label><textarea class="textarea" required></textarea></div>
-          <button class="btn" type="submit">Send message</button>
-        </form>
-      </section>`;
-    document.getElementById("contact-form").onsubmit = (e) => { e.preventDefault(); e.target.reset(); U.toast("Thanks! Your message has been sent.", "ok"); };
-  }
-
-  /* ---- Privacy Policy (required for AdSense) ---- */
-  function privacy(app) {
-    U.setMeta("Privacy Policy", "How Time Grid FC collects, uses and protects your information, including cookies and third-party advertising.");
-    const updated = U.fmtDate(new Date().toISOString());
-    app.innerHTML = `
-      <section class="wrap section article">
-        ${crumbs([["Home", "/"], ["Privacy Policy"]])}
-        <span class="eyebrow">Legal</span>
-        <h1>Privacy Policy</h1>
-        <div class="content">
-          <p class="muted">Last updated: ${updated}</p>
-          <p>This Privacy Policy explains how Time Grid FC ("we", "us", "our") collects, uses, and safeguards information when you visit this website. By using the site, you agree to the practices described here.</p>
-
-          <h2>Information we collect</h2>
-          <p><b>Account information.</b> If you create an account, we store the name and email address you provide and an encrypted (hashed) version of your password.</p>
-          <p><b>Content you submit.</b> Comments you post on articles are stored and displayed with your chosen name.</p>
-          <p><b>Usage &amp; log data.</b> Like most websites, our servers automatically record standard information such as your browser type, device, approximate location derived from your IP address, referring pages, and the pages you view.</p>
-
-          <h2>Cookies</h2>
-          <p>We use cookies and similar browser storage to keep you signed in, remember preferences such as your light/dark theme choice, and understand how the site is used. You can control or delete cookies through your browser settings; some features may not work correctly if cookies are disabled.</p>
-
-          <h2>Third-party advertising (Google AdSense)</h2>
-          <p>We may use Google AdSense to display advertisements. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this and other websites.</p>
-          <ul>
-            <li>Google's use of advertising cookies enables it and its partners to serve ads to you based on your visits to this site and/or other sites on the Internet.</li>
-            <li>You may opt out of personalised advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</li>
-            <li>You can also opt out of some third-party vendors' use of cookies for personalised advertising at <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a>.</li>
-          </ul>
-          <p>Third parties may collect or receive information from this site and elsewhere and use that information to provide measurement services and target ads. Our advertising partners' use of your data is governed by their own privacy policies.</p>
-
-          <h2>Analytics</h2>
-          <p>We may use privacy-respecting analytics tools to measure traffic and improve content. These tools may set cookies and process aggregated usage data.</p>
-
-          <h2>Third-party links &amp; media</h2>
-          <p>This site links to external sites (such as YouTube) and displays media sourced from third parties (see our <a href="/about">media credits</a>). We are not responsible for the content or privacy practices of external sites.</p>
-
-          <h2>Children's privacy</h2>
-          <p>This site is not directed to children under the age of 13, and we do not knowingly collect personal information from them.</p>
-
-          <h2>Your rights</h2>
-          <p>You may request access to, correction of, or deletion of the personal information associated with your account by contacting us. Depending on your location, additional rights may apply under laws such as the GDPR or CCPA.</p>
-
-          <h2>Changes to this policy</h2>
-          <p>We may update this Privacy Policy from time to time. Changes will be posted on this page with a revised "last updated" date.</p>
-
-          <h2>Contact</h2>
-          <p>Questions about this policy? Email us at <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a> or use our <a href="/contact">Contact page</a>.</p>
-        </div>
-      </section>`;
-  }
-
-  /* ---- Terms & Disclaimer ---- */
-  function terms(app) {
-    U.setMeta("Terms & Disclaimer", "The terms of use and content disclaimer for the Time Grid FC website.");
-    const updated = U.fmtDate(new Date().toISOString());
-    app.innerHTML = `
-      <section class="wrap section article">
-        ${crumbs([["Home", "/"], ["Terms & Disclaimer"]])}
-        <span class="eyebrow">Legal</span>
-        <h1>Terms of Use &amp; Disclaimer</h1>
-        <div class="content">
-          <p class="muted">Last updated: ${updated}</p>
-          <p>By accessing and using Time Grid FC, you accept these terms. If you do not agree, please do not use the site.</p>
-
-          <h2>Content &amp; accuracy</h2>
-          <p>All articles are provided for general information, analysis, and entertainment. While we strive for accuracy, football data and news change quickly and we make no warranty that all content is complete, current, or error-free. Nothing on this site constitutes professional or betting advice.</p>
-
-          <h2>Intellectual property</h2>
-          <p>Original editorial content on this site is owned by Time Grid FC. Club names, competition names, and any trademarks referenced remain the property of their respective owners and are used for identification and descriptive purposes only. Third-party images are used under the licences described in our <a href="/about">media credits</a>.</p>
-
-          <h2>User-contributed content</h2>
-          <p>You are responsible for comments you post. Do not post unlawful, abusive, misleading, or infringing content. We may moderate, edit, or remove comments at our discretion.</p>
-
-          <h2>External links</h2>
-          <p>This site contains links to third-party websites, including YouTube. We are not responsible for the content, policies, or availability of those sites.</p>
-
-          <h2>Limitation of liability</h2>
-          <p>The site is provided "as is" without warranties of any kind. To the fullest extent permitted by law, Time Grid FC is not liable for any loss or damage arising from your use of the site.</p>
-
-          <h2>Changes</h2>
-          <p>We may update these terms at any time; continued use of the site constitutes acceptance of the revised terms.</p>
-
-          <h2>Contact</h2>
-          <p>Questions? Email <a href="mailto:timegridfc@gmail.com">timegridfc@gmail.com</a>.</p>
-        </div>
-      </section>`;
+    infoPage(app, "contact");
+    const form = document.getElementById("contact-form");
+    const status = document.getElementById("cf-status");
+    const btn = form.querySelector('button[type="submit"]');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(form).entries());
+      const say = (msg, ok) => { status.textContent = msg; status.style.color = ok ? "var(--primary)" : "var(--danger, #ef4444)"; };
+      if (!f.name.trim() || !/^\S+@\S+\.\S+$/.test(f.email.trim()) || f.message.trim().length < 10) {
+        return say("Please add your name, a valid email and a message of at least 10 characters.");
+      }
+      btn.disabled = true; say("Sending…", true);
+      try {
+        await TG.api.request("/contact", { method: "POST", body: f, timeout: 15000 });
+        form.reset(); say("Thanks! Your message has been sent. We usually reply within 48 hours.", true);
+      } catch (err) {
+        say((err && err.message) || "Your message could not be sent. Please email us at " + TG_INFO.EMAIL + ".");
+      } finally { btn.disabled = false; }
+    };
   }
 
   /* =======================================================================

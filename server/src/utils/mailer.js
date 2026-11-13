@@ -32,14 +32,14 @@ async function verify() {
   catch (e) { return { configured: true, ok: false, error: e.message }; }
 }
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, replyTo }) {
   const t = getTransport();
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || "Time Grid FC <no-reply@timegridfc.com>";
   if (!t) {
     console.log(`\n[mailer] SMTP not configured — email NOT sent. Would send to ${to}:\n  Subject: ${subject}\n  ${text}\n`);
     return { delivered: false, dev: true };
   }
-  await t.sendMail({ from, to, subject, text, html });
+  await t.sendMail({ from, to, subject, text, html, ...(replyTo ? { replyTo } : {}) });
   return { delivered: true, dev: false };
 }
 

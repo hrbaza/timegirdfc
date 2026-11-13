@@ -39,6 +39,8 @@ function fakeModel(name) {
     findOne: (q) => new Q(rows().filter((d) => match(d, q)).slice(0, 1)).then((r) => r[0] || null),
     findById: (id) => { const q = new Q(rows().filter((d) => d._id === id)); q.then = (res, rej) => Promise.resolve(q.rows[0] ? { ...q.rows[0] } : null).then(res, rej); return q; },
     countDocuments: async (q) => rows().filter((d) => match(d, q)).length,
+    create: async (doc) => { const d = { _id: name[0].toLowerCase() + "-" + rows().length, ...doc }; (DATA[name] = rows()).push(d); return d; },
+    updateOne: async (q, set) => { const d = rows().find((x) => match(x, q)); if (d) Object.assign(d, set); return {}; },
     aggregate: async (pipe) => {
       let r = rows().map((d) => ({ ...d }));
       for (const st of pipe) {
@@ -121,6 +123,23 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
 
   const list = await get("/news");
   ok(list.r.status === 200 && (list.text.match(/<div class="thumb"><img /g) || []).length === 8, "news list SSR cards have images");
+
+  // AdSense fixes: shared info pages, contact form, merged duplicates, hidden cover.
+  const priv = await get("/privacy");
+  ok(/Google Analytics 4/.test(priv.text) && /Last updated: 13 November 2026/.test(priv.text), "privacy page has GA section and a fixed date");
+  const about = await get("/about");
+  ok(/did not give permission/.test(about.text) && !/Player photographs are sourced/.test(about.text), "about page has the takedown note, old credit line gone");
+  const contactPage = await get("/contact");
+  ok(/id="contact-form"/.test(contactPage.text), "contact page has the form");
+  const post = (body) => fetch(B + "/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const bad = await post({ name: "A", email: "nope", message: "short" });
+  ok(bad.status === 400, "contact: invalid input is rejected (" + bad.status + ")");
+  const bot = await post({ name: "Bot", email: "b@b.co", message: "spam spam spam", website: "x" });
+  ok(bot.status === 200 && !(DATA.ContactMessage || []).some((m) => m.name === "Bot"), "contact: honeypot is dropped");
+  const good = await post({ name: "Fan", email: "fan@example.com", topic: "Correction", message: "The score in the report is wrong." });
+  ok(good.status === 503 && (DATA.ContactMessage || []).some((m) => m.name === "Fan"), "contact: saved; 503 because SMTP is not set locally (" + good.status + ")");
+  const SLUG = require("../utils/slug");
+  ok(SLUG.MERGED["n-s21ix27"] === "n-k7n4sqy" && SLUG.NO_COVER["n-97n42r2"], "merge and no-cover lists load");
 
   if (process.env.KEEP) { console.log("Server kept running on " + B); return; } // KEEP=1: look at it in a browser
   srv.close();

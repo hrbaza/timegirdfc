@@ -21,6 +21,7 @@ router.get("/media/:col/:id/:field", misc.media); // serve stored images (keeps 
 
 // Auth & custom resources
 router.use("/auth", require("./authRoutes"));
+router.use("/contact", require("./contactRoutes")); // public contact form
 router.use("/users", require("./userRoutes"));
 router.use("/players", require("./playerRoutes"));
 router.use("/news", require("./newsRoutes"));

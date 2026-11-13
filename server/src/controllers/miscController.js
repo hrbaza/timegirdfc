@@ -11,6 +11,7 @@ const Video = require("../models/Video");
 const Comment = require("../models/Comment");
 const { catchAsync, AppError } = require("../utils/AppError");
 const IMG = require("../../../assets/js/imgsrc.js"); // responsive image widths + URLs
+const { NO_COVER } = require("../utils/slug");
 
 // GET /api/search?q=  (FR-12: grouped global search)
 const search = catchAsync(async (req, res) => {
@@ -61,7 +62,7 @@ async function leanNews(match, opts) {
   ]);
   rows.forEach((n) => {
     n.id = n._id;
-    n.cover = n.coverExt || (n.hasCover ? `/api/media/news/${n._id}/cover` : "");
+    n.cover = NO_COVER[n._id] ? "" : n.coverExt || (n.hasCover ? `/api/media/news/${n._id}/cover` : "");
     n.bodyImage1 = n.hasBI1 ? `/api/media/news/${n._id}/bodyImage1` : "";
     n.bodyImage2 = n.hasBI2 ? `/api/media/news/${n._id}/bodyImage2` : "";
     delete n._id; delete n.coverExt; delete n.hasCover; delete n.hasBI1; delete n.hasBI2;
@@ -120,6 +121,7 @@ const media = catchAsync(async (req, res, next) => {
   const { col, id, field } = req.params;
   const cfg = MEDIA[col];
   if (!cfg || !cfg.fields.includes(field)) return next(new AppError("Media not found.", 404));
+  if (col === "news" && field === "cover" && NO_COVER[id]) return res.status(404).end();
   const doc = await cfg.model.findById(id).select(field).lean();
   const val = doc && doc[field];
   if (!val) return res.status(404).end();

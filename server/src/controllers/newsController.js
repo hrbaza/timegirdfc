@@ -1,6 +1,6 @@
 const News = require("../models/News");
 const { AppError, catchAsync } = require("../utils/AppError");
-const { MERGED, publicNews } = require("../utils/slug");
+const { MERGED, NO_COVER, publicNews } = require("../utils/slug");
 
 // Base64 images stay in Mongo but never travel in JSON — expose them as
 // lightweight /api/media/... URLs (external URLs pass through unchanged).
@@ -9,6 +9,7 @@ function toMediaUrls(doc) {
   ["cover", "bodyImage1", "bodyImage2"].forEach((f) => {
     if (o[f] && /^data:/i.test(o[f])) o[f] = `/api/media/news/${o.id || o._id}/${f}`;
   });
+  if (NO_COVER[o.id || o._id]) o.cover = "";
   return o;
 }
 
