@@ -115,8 +115,10 @@
   margin:0 0 1.8rem; aspect-ratio:16/9; border-radius:22px; overflow:hidden; position:relative;
   box-shadow:0 26px 60px rgba(0,0,0,.35); background:var(--surface-2);
 }
-.article figure.cover img{ animation:coverIn 1.4s var(--ease) both; transform-origin:center; }
-@keyframes coverIn{ from{ transform:scale(1.08); } to{ transform:scale(1); } }
+/* No entrance animation on the cover: it is the page's main image (LCP) and
+   must paint as soon as it loads. A slow zoom on hover only. */
+.article figure.cover img{ transition:transform 1.2s var(--ease); }
+.article figure.cover:hover img{ transform:scale(1.03); }
 .article figure.cover figcaption{
   position:absolute; left:0; right:0; bottom:0; margin:0; padding:1.6rem 1rem .6rem; text-align:left;
   color:#e8f2ec; font-size:.78rem; background:linear-gradient(to top,rgba(0,0,0,.65),transparent);
