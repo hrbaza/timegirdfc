@@ -69,6 +69,9 @@ if (clientDirEnv) {
     res.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
     res.send(xml);
   });
+  // IndexNow key file: search engines fetch /<key>.txt to confirm the key.
+  const { KEY: INDEXNOW_KEY } = require("./indexnow");
+  app.get(`/${INDEXNOW_KEY}.txt`, (req, res) => res.type("text/plain").set("Cache-Control", "public, max-age=86400").send(INDEXNOW_KEY));
   // Google News sitemap (last 48 hours) and RSS feed (latest 30 articles).
   app.get(["/news-sitemap.xml", "/rss.xml"], async (req, res) => {
     try {

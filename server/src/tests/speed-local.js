@@ -177,6 +177,30 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
   s = await st("/news/t%C3%A9st-article-number-1"); ok(s[0] === 301 && s[1] === "/news/test-article-number-1", "accented URL -> 301 " + s[1]);
   s = await st("/news/no-such-article-at-all"); ok(s[0] === 404, "unknown article -> 404");
 
+  // IndexNow: key file, and the ping after an admin save (fetch is faked so
+  // nothing is sent to the real IndexNow API).
+  const IN = require("../indexnow");
+  const keyFile = await get("/" + IN.KEY + ".txt");
+  ok(keyFile.r.status === 200 && keyFile.text === IN.KEY, "IndexNow key file is served");
+  const realFetch = global.fetch; let sentBody = null;
+  global.fetch = async (url, opts) => { sentBody = { url, ...JSON.parse(opts.body) }; return { status: 200 }; };
+  await new Promise((done) => {
+    const res = { statusCode: 200, json(b) { this.end(JSON.stringify(b)); return this; }, end() { done(); return this; } };
+    IN.newsChange({ params: { id: "n-t1" } }, res, () => res.json({ status: "success", data: { id: "n-t1" } }));
+  });
+  global.fetch = realFetch;
+  ok(sentBody && sentBody.url === "https://api.indexnow.org/indexnow" && sentBody.host === "www.timegridfc.com" && sentBody.key === IN.KEY
+    && sentBody.urlList.includes("https://www.timegridfc.com/news/test-article-number-1") && sentBody.urlList.includes("https://www.timegridfc.com/news"),
+    "IndexNow ping after a save: " + (sentBody && sentBody.urlList.join(" ")));
+  let failed = false;
+  global.fetch = async () => { throw new Error("network down"); };
+  await new Promise((done) => {
+    const res = { statusCode: 200, json(b) { this.end(); return this; }, end() { done(); return this; } };
+    IN.newsChange({ params: { id: "n-t2" } }, res, () => res.json({ data: { id: "n-t2" } }));
+  }).catch(() => { failed = true; });
+  global.fetch = realFetch;
+  ok(!failed, "IndexNow failure never blocks the save");
+
   if (process.env.KEEP) { console.log("Server kept running on " + B); return; } // KEEP=1: look at it in a browser
   srv.close();
   console.log(fail.length ? `\n${fail.length} FAILED` : "\nALL PASSED");
