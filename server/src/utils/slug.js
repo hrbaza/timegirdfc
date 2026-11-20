@@ -20,6 +20,10 @@ const MERGED = {
   "n-3irkrth": "n-drqk4s2", // Messi "The Last Tango" -> "Messi's Last Dance at the Monumental"
 };
 const MERGED_IDS = Object.keys(MERGED);
+// Mistyped article ids that were linked somewhere -> the real article id.
+const ID_ALIASES = {
+  "n-3irkrkh": "n-drqk4s2", // typo of n-3irkrth (merged into n-drqk4s2)
+};
 // Articles whose cover image must not be shown (no rights to it). The article
 // itself stays; its cover is dropped everywhere and its media URL returns 404.
 const NO_COVER = {
@@ -30,6 +34,8 @@ function publicNews(extra, extraIds) {
   return Object.assign({ status: "published", _id: { $nin: MERGED_IDS.concat(extraIds || []) } }, extra || {});
 }
 const EXTRA = { "ø": "o", "Ø": "o", "ß": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "đ": "d", "Đ": "d", "ł": "l", "Ł": "l", "ı": "i" };
+
+const compact = (s) => String(s || "").replace(/-/g, "");
 
 function slugOf(title) {
   let s = String(title || "")
@@ -66,7 +72,7 @@ async function getSlugMap(force) {
   if (!force && cache && Date.now() - cacheAt < TTL_MS) return cache;
   if (pending) return pending;
   const News = require("../models/News");
-  pending = News.find({ status: "published" }).select("_id title publishedAt").lean()
+  pending = News.find({ status: "published" }).select("_id title publishedAt slug").lean()
     .then((rows) => {
       const map = assignSlugs(rows.map((r) => ({ id: r._id, title: r.title, publishedAt: r.publishedAt })));
       // Merged articles: their old slug and id both point at the target's slug.
@@ -76,6 +82,18 @@ async function getSlugMap(force) {
         map.redirectSlug[map.byId[from]] = map.byId[to];
         delete map.bySlug[map.byId[from]];
         map.byId[from] = map.byId[to];
+      }
+      for (const [from, to] of Object.entries(ID_ALIASES)) if (map.byId[to]) map.byId[from] = map.byId[to];
+      // Older URL forms of each article -> its current slug: the slug stored in
+      // the database (title + "-" + 4 id characters), and a "compact" form with
+      // every hyphen removed, which also matches older slug rules such as
+      // "ballon-d-or" / "kane-s" for "ballon-dor" / "kanes".
+      map.alias = {};
+      for (const r of rows) {
+        const to = map.byId[r._id];
+        if (!to) continue;
+        if (r.slug && !map.bySlug[r.slug]) map.alias[r.slug] = to;
+        map.alias["~" + compact(slugOf(r.title))] = to;
       }
       cache = map;
       cacheAt = Date.now();
@@ -97,6 +115,13 @@ async function resolveNewsKey(key) {
     if (lower !== key && map.bySlug[lower]) return { redirect: lower };
     const stripped = key.replace(/-\d+$/, "");
     if (stripped !== key && map.bySlug[stripped]) return { redirect: stripped };
+    if (map.alias) {
+      if (map.alias[key]) return { redirect: map.alias[key] };
+      const c = compact(lower);
+      if (map.alias["~" + c]) return { redirect: map.alias["~" + c] };
+      const noSuffix = compact(lower.replace(/-[a-z0-9]{4}$/, "")); // database slug: title + "-" + 4 id chars
+      if (map.alias["~" + noSuffix]) return { redirect: map.alias["~" + noSuffix] };
+    }
   }
   return {};
 }

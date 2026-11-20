@@ -115,7 +115,7 @@ if (clientDirEnv) {
       // Let Vercel's CDN cache the rendered HTML briefly (fast) but stay fresh so
       // new/edited posts show quickly. The client also re-hydrates from the API.
       // A genuine 404 is returned as a real 404 (never a Soft 404) and not cached.
-      if (status === 404) res.set("Cache-Control", "no-store");
+      if (status >= 400) res.set("Cache-Control", "no-store");
       // The CDN refreshes it in the background after 2 minutes, so visitors
       // (and Googlebot) almost never wait for the function and the database.
       else res.set("Cache-Control", "public, max-age=0, s-maxage=120, stale-while-revalidate=86400");

@@ -62,6 +62,12 @@ function linkify(html, slugMap) {
   );
 }
 
+// Sections that used to exist (players, teams, leagues, awards, transfers,
+// schedule). Their URLs answer 410 Gone so search engines drop them.
+const REMOVED_SECTIONS = new Set(["players", "player", "teams", "team", "leagues", "league", "awards", "award", "transfers", "transfer", "schedule", "fixtures", "daily", "stats", "search"]);
+// Account pages: useful to visitors, nothing for search results.
+const NOINDEX_PAGES = new Set(["signin", "signup", "forgot", "account"]);
+
 /* ---- static meta for list / info pages ---- */
 const SIMPLE = {
   news: ["Football News & Analysis", "The latest football news, transfer stories, match previews, reports and tactical analysis from Time Grid FC."],
@@ -269,6 +275,11 @@ async function buildMeta(seg, page) {
       const pg = Math.max(1, parseInt(page, 10) || 1);
       const { rows, total } = await fetchNewsPage(pg);
       if (pg > 1) M.title = `Football News — page ${pg}`;
+      if (pg > 1 && !rows.length && total) {                                     // past the last page: a real 404, not an empty list
+        M.httpStatus = 404; M.title = "Page Not Found"; M.desc = "This page of articles does not exist.";
+        M.content = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>This page of articles does not exist.</p><p class="help"><a href="/news">← Back to the latest articles</a></p></div></section>`;
+        return M;
+      }
       M.content = newsListContent(rows, pg, total, map);
       const pageUrl = CANONICAL_BASE + "/news" + (pg > 1 ? `?page=${pg}` : "");
       M.jsonLd = [collectionLd(pageUrl, M.title, M.desc, rows.map((n) => ({ url: CANONICAL_BASE + newsUrl(n._id || n.id, map), name: n.title })))];
@@ -283,7 +294,13 @@ async function buildMeta(seg, page) {
         ...(r === "contact" ? { "mainEntity": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/", "email": INFO.EMAIL, "contactPoint": { "@type": "ContactPoint", "contactType": "editorial", "email": INFO.EMAIL } } } : {}),
       }];
     }
-    else M.content = genericContent(M.title, M.desc);                            // players/teams/… (heading, not empty)
+    else M.content = genericContent(M.title, M.desc);                            // sign-in / account pages
+    if (NOINDEX_PAGES.has(r)) M.noindex = true;
+  } else if (REMOVED_SECTIONS.has(r)) {
+    // Sections removed from the site: 410 Gone tells Google to drop them faster than a 404.
+    M.httpStatus = 410;
+    M.title = "Page Removed"; M.desc = "This section has been removed from Time Grid FC.";
+    M.content = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>This section has been removed.</p><p class="help"><a href="/news">Read the latest football articles →</a></p></div></section>`;
   } else if (r) {
     M.httpStatus = 404;
     M.title = "Not Found"; M.desc = "The page you were looking for could not be found.";
@@ -403,10 +420,10 @@ function injectHead(html, M, canonicalUrl) {
   const full = esc(INFO.pageTitle(M.title)); // brand suffix only when it fits in 60 characters
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${full}</title>`);
   html = html.replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${esc(M.desc)}" />`);
-  // Not-found pages answer 404 and ask search engines not to index them.
-  if (M.httpStatus === 404) html = html.replace(/<meta name="robots"[^>]*>/, `<meta name="robots" content="noindex, follow" />`);
+  // Error pages (404 / 410) and account pages ask search engines not to index them.
+  if (M.httpStatus >= 400 || M.noindex) html = html.replace(/<meta name="robots"[^>]*>/, `<meta name="robots" content="noindex, follow" />`);
   // Pages without their own picture share the site's default card image.
-  if (!M.image && M.httpStatus !== 404) { M.image = CANONICAL_BASE + "/assets/img/og-default.png"; M.imageAlt = M.imageAlt || "Time Grid FC — football news, match analysis & videos"; }
+  if (!M.image && !(M.httpStatus >= 400)) { M.image = CANONICAL_BASE + "/assets/img/og-default.png"; M.imageAlt = M.imageAlt || "Time Grid FC — football news, match analysis & videos"; }
   // Drop the static default OG tags so we can inject accurate per-page ones.
   html = html.replace(/\s*<meta property="og:title"[^>]*>/, "");
   html = html.replace(/\s*<meta property="og:description"[^>]*>/, "");
@@ -465,8 +482,13 @@ function loadTemplate(clientDir) {
 
 async function renderPage(req, clientDir) {
   const template = loadTemplate(clientDir);
-  let urlPath = (req.path || "/").replace(/\/+$/, "") || "/";
-  const seg = urlPath.split("/").filter(Boolean);
+  const rawPath = req.path || "/";
+  let urlPath = rawPath.replace(/\/+$/, "") || "/";
+  const query = (req.originalUrl || "").includes("?") ? req.originalUrl.slice(req.originalUrl.indexOf("?")) : "";
+  // One URL per page: drop a trailing slash and lowercase the section name (301).
+  if (rawPath !== urlPath && rawPath !== "/") return { redirect: urlPath + query, status: 301 };
+  const seg = urlPath.split("/").filter(Boolean).map((s) => { try { return decodeURIComponent(s); } catch (e) { return s; } });
+  if (seg[0] && seg[0] !== seg[0].toLowerCase()) return { redirect: "/" + [seg[0].toLowerCase()].concat(seg.slice(1).map(encodeURIComponent)).join("/") + query, status: 301 };
   const page = Math.max(1, parseInt((req.query && req.query.page) || "1", 10) || 1);
   const M = await buildMeta(seg, page);
   if (M.redirect) return { redirect: M.redirect, status: 301 };

@@ -11,7 +11,7 @@ const jpg = process.argv[2] && fs.existsSync(process.argv[2]) ? fs.readFileSync(
 const now = Date.now();
 const NEWS = Array.from({ length: 8 }, (_, i) => ({
   _id: "n-t" + i, title: "Test Article Number " + i, slug: "", category: i % 2 ? "Transfer News" : "Match Analysis",
-  author: "Time Grid FC", excerpt: i === 3 ? "" : "Excerpt " + i, body: `<p>Body text ${i} `.padEnd(400, "x") + "</p>",
+  slug: "test-article-number-" + i + "-ab1" + i, author: "Time Grid FC", excerpt: i === 3 ? "" : "Excerpt " + i, body: `<p>Body text ${i} `.padEnd(400, "x") + "</p>",
   tags: ["t"], status: "published", publishedAt: new Date(now - i * 3600e3), updatedAt: new Date(now - i * 3600e3 - 15e3),
   cover: i === 0 && jpg ? "data:image/jpeg;base64," + jpg.toString("base64") : "https://images.unsplash.com/photo-1?w=800&q=80",
 }));
@@ -162,6 +162,20 @@ const fail = []; const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m)
   ok(INFO.pageTitle("x".repeat(70)) === "x".repeat(70), "long headline drops the brand suffix");
   ok((art.text.match(/<div class="thumb"><img /g) || []).length === 6, "article shows 6 related articles");
   ok(/width="960" height="480"/.test(art.text), "cover image has width/height");
+
+  // Indexing fixes: removed sections, account pages, empty pages, old URL forms.
+  const st = async (p) => { const r = await fetch(B + p, { redirect: "manual" }); return [r.status, r.headers.get("location") || "", r.status === 200 || r.status >= 400 ? await r.text() : ""]; };
+  let s;
+  s = await st("/players"); ok(s[0] === 410 && /noindex/.test(s[2]), "removed section /players -> 410 noindex");
+  s = await st("/team/arsenal"); ok(s[0] === 410, "removed /team/arsenal -> 410");
+  s = await st("/signin"); ok(s[0] === 200 && /<meta name="robots" content="noindex, follow" \/>/.test(s[2]), "/signin is noindex");
+  s = await st("/news?page=99"); ok(s[0] === 404 && /noindex/.test(s[2]), "/news?page=99 -> 404 noindex");
+  s = await st("/news/test-article-number-1/"); ok(s[0] === 301 && s[1] === "/news/test-article-number-1", "trailing slash -> 301 " + s[1]);
+  s = await st("/News"); ok(s[0] === 301 && s[1] === "/news", "/News -> 301 /news");
+  s = await st("/news/test-article-number-1-ab11"); ok(s[0] === 301 && s[1] === "/news/test-article-number-1", "database slug -> 301 " + s[1]);
+  s = await st("/news/testarticle-number-1"); ok(s[0] === 301 && s[1] === "/news/test-article-number-1", "older slug form -> 301 " + s[1]);
+  s = await st("/news/t%C3%A9st-article-number-1"); ok(s[0] === 301 && s[1] === "/news/test-article-number-1", "accented URL -> 301 " + s[1]);
+  s = await st("/news/no-such-article-at-all"); ok(s[0] === 404, "unknown article -> 404");
 
   if (process.env.KEEP) { console.log("Server kept running on " + B); return; } // KEEP=1: look at it in a browser
   srv.close();
