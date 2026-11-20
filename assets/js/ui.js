@@ -160,7 +160,7 @@ TG.ui = (function () {
       })(),
       "publisher": { "@type": "Organization", "name": SITE, "url": BASE + "/", "logo": { "@type": "ImageObject", "url": BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
-      "articleSection": n.category,
+      "articleSection": window.TG_INFO ? TG_INFO.catLabel(n.category) : n.category,
       "keywords": kw,
       "inLanguage": "en",
     }, {
@@ -168,7 +168,7 @@ TG.ui = (function () {
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE + "/" },
-        { "@type": "ListItem", "position": 2, "name": "News", "item": BASE + "/news" },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": BASE + "/news" },
         { "@type": "ListItem", "position": 3, "name": n.title, "item": pageUrl },
       ],
     }]);
@@ -195,7 +195,7 @@ TG.ui = (function () {
 
   /* ---- Nav definition ---- */
   const NAV = [
-    ["", "Home"], ["news", "News"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"],
+    ["", "Home"], ["news", "Blog"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"],
   ];
 
   /* ---- Header ---- */
@@ -293,10 +293,10 @@ TG.ui = (function () {
       <div class="wrap foot">
         <div>
           <div class="brand" style="margin-bottom:.6rem">${LOGO_IMG} <span class="brand-txt">Time<b>Grid</b>FC</span></div>
-          <p class="muted" style="max-width:34ch">Football news, match analysis & videos — the official companion to the Time Grid FC YouTube channel.</p>
+          <p class="muted" style="max-width:34ch">Football stories, match analysis & videos — the blog of the Time Grid FC YouTube channel.</p>
           <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
         </div>
-        ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
+        ${col("Explore", [["/news", "Blog"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
         ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms & Disclaimer"]])}
       </div>
       <div class="wrap foot-bottom">
@@ -333,6 +333,25 @@ TG.ui = (function () {
       setTimeout(() => c.classList.remove("kick"), 460);
     });
   }
+
+  /* ---- Page opening motion ----
+     After the first page, every route change runs a line across the top and
+     lets the new page rise in. The first page (server-rendered) is left alone
+     so it shows instantly. */
+  let navigated = false;
+  function routeStart() {
+    if (!navigated) return;
+    let bar = document.getElementById("tg-route-bar");
+    if (!bar) { bar = document.createElement("div"); bar.id = "tg-route-bar"; document.body.appendChild(bar); }
+    bar.classList.remove("run"); void bar.offsetWidth; bar.classList.add("run");
+  }
+  function pageEnter() {
+    if (!navigated) return;
+    const app = document.getElementById("tg-app");
+    if (!app) return;
+    app.classList.remove("tg-enter"); void app.offsetWidth; app.classList.add("tg-enter");
+  }
+  function markNavigated() { navigated = true; }
 
   /* ---- Scroll progress + reveal ---- */
   function initScroll() {
@@ -391,7 +410,7 @@ TG.ui = (function () {
     if (!r.news.length) { box.innerHTML = `<div class="empty" style="padding:2rem">No results for “${esc(q)}”.</div>`; return; }
     const grp = (title, items) => items.length ? `<div class="sr-group"><h4>${title}</h4>${items.join("")}</div>` : "";
     const item = (href, ic, t, s) => `<a class="sr-item" href="${href}" onclick="TG.ui.closeSearch()"><span class="ic">${ic}</span><span><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div></span></a>`;
-    box.innerHTML = grp("News", r.news.map((n) => item(store.newsHref(n), "📰", n.title, n.category)));
+    box.innerHTML = grp("Articles", r.news.map((n) => item(store.newsHref(n), "📰", n.title, window.TG_INFO ? TG_INFO.catLabel(n.category) : n.category)));
   }
 
   /* ---- Cookie consent (GDPR / AdSense expectation) ---- */
@@ -430,7 +449,7 @@ TG.ui = (function () {
     esc, initials, fmtDate, timeAgo, fmtDay, go, icon, setMeta, setArticleSEO,
     flag, flagIso, flagFallback, flagFill, compFlag,
     renderHeader, renderAdminHeader, renderFooter, setActiveNav, renderTicker,
-    applyTheme, toggleTheme, initCursor, initScroll, observeReveals,
+    applyTheme, toggleTheme, initCursor, initScroll, observeReveals, routeStart, pageEnter, markNavigated,
     toast, openSearch, closeSearch, ballSVG,
     init() { initCursor(); initScroll(); initKeys(); initCookieConsent(); },
   };

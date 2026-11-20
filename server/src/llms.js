@@ -18,7 +18,7 @@ const SUMMARY =
   "to the Time Grid FC YouTube channel (@timegrid_fc).";
 
 const SECTIONS = [
-  ["Football News & Blog", "/news", "daily news, match & player analysis, features"],
+  ["Football Blog", "/news", "football stories, transfer talk, match & player analysis, features"],
   ["World Cup", "/worldcup", "hosts, champions and records"],
   ["Videos", "/videos", "match analysis and football videos"],
   ["About", "/about", "about Time Grid FC"],

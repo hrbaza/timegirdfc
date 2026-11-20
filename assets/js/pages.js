@@ -45,7 +45,7 @@ TG.pages = (function () {
   /* ---- card renderers ---- */
   function newsCard(n) {
     return `<a class="card reveal" href="${S.newsHref(n)}">
-      <div class="thumb">${thumb(n.category, n.cover)}<span class="tag chip">${esc(n.category)}</span></div>
+      <div class="thumb">${thumb(n.category, n.cover)}<span class="tag chip">${esc(TG_INFO.catLabel(n.category))}</span></div>
       <div class="pad">
         <h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(summary(n))}</p>
@@ -102,7 +102,7 @@ TG.pages = (function () {
      HOME (FR-1)
      ======================================================================= */
   function home(app) {
-    U.setMeta("", "Football news, match analysis & videos — the official companion to the Time Grid FC YouTube channel.");
+    U.setMeta("", "Football stories, match analysis, transfer talk and videos — the blog of the Time Grid FC YouTube channel.");
     const feat = S.publishedNews()[0];
     // Latest News shows the most recent posts (including the newest), so a freshly
     // published blog appears here immediately.
@@ -114,7 +114,7 @@ TG.pages = (function () {
         <div class="hero-grid">
           <div>
             <span class="eyebrow">Time Grid FC · Football Hub</span>
-            <h1>Where football <span class="hl">lives</span>.<br>Football news &amp; analysis.</h1>
+            <h1>Where football <span class="hl">lives</span>.<br>Football stories &amp; analysis.</h1>
             <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
             <div class="hero-cta">
               <a class="btn" href="/news">Read the latest ${icon("arrow")}</a>
@@ -124,7 +124,7 @@ TG.pages = (function () {
           <div>
             ${feat ? `<a class="hero-card" href="${S.newsHref(feat)}">
               <div class="cover">${thumb(feat.category, feat.cover, "", feat.title, "feature", true)}<span class="hero-badge">Featured</span></div>
-              <div class="body"><span class="chip">${esc(feat.category)}</span>
+              <div class="body"><span class="chip">${esc(TG_INFO.catLabel(feat.category))}</span>
                 <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
                 <p class="muted" style="margin:0;font-size:.92rem">${esc(feat.excerpt||"")}</p></div>
             </a>` : ""}
@@ -134,7 +134,7 @@ TG.pages = (function () {
       </section>
 
       <section class="wrap section" style="padding-top:0">
-        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news ${icon("arrow")}</a></div>
+        <div class="section-head"><div><span class="eyebrow">The Blog</span><h2>Latest Stories</h2></div><a class="btn ghost sm" href="/news">All stories ${icon("arrow")}</a></div>
         <div class="grid cols-3">${latest.map(newsCard).join("")}</div>
       </section>
 
@@ -167,7 +167,7 @@ TG.pages = (function () {
     let page = Math.max(1, parseInt(qp.get("page"), 10) || 1);
     const SIZE = 12;
     const cats = ["All", ...S.newsCategories()];
-    U.setMeta(page > 1 ? `Football News — page ${page}` : "Football News & Analysis", "The latest football news, transfer stories, match previews, reports and tactical analysis from Time Grid FC.");
+    U.setMeta(page > 1 ? `Football Blog — page ${page}` : "Football Blog: Stories & Analysis", "Football stories, transfer talk, match previews, reports and tactical analysis from the Time Grid FC blog.");
 
     let list = S.publishedNews();
     if (cat !== "All") list = list.filter((n) => n.category === cat);
@@ -177,7 +177,7 @@ TG.pages = (function () {
 
     const catHref = (c) => (c === "All" ? "/news" : `/news?cat=${encodeURIComponent(c)}`);
     const pageHref = (p) => `/news?page=${p}${cat !== "All" ? "&cat=" + encodeURIComponent(cat) : ""}`;
-    const filters = cats.map((c) => `<a class="pill${c === cat ? " active" : ""}" href="${catHref(c)}">${esc(c)}</a>`).join("");
+    const filters = cats.map((c) => `<a class="pill${c === cat ? " active" : ""}" href="${catHref(c)}">${esc(c === "All" ? "All" : TG_INFO.catLabel(c))}</a>`).join("");
     let pager = "";
     if (pages > 1) {
       let nums = "";
@@ -187,8 +187,8 @@ TG.pages = (function () {
 
     app.innerHTML = `
       <section class="wrap section">
-        ${crumbs([["Home", "/"], ["News"]])}
-        <div class="section-head"><div><span class="eyebrow">News & Blog</span><h1>Football News</h1></div></div>
+        ${crumbs([["Home", "/"], ["Blog"]])}
+        <div class="section-head"><div><span class="eyebrow">The Blog</span><h1>Football Stories &amp; Analysis</h1></div></div>
         <div class="filters" id="news-filters">${filters}</div>
         <div class="grid cols-3" id="news-grid">${slice.length ? slice.map(newsCard).join("") : empty("No posts in this category yet.")}</div>
         <nav class="pager" id="news-pager" aria-label="Pagination">${pager}</nav>
@@ -311,8 +311,8 @@ TG.pages = (function () {
 
     app.innerHTML = `
       <article class="wrap section article">
-        ${crumbs([["Home", "/"], ["News", "/news"], [n.category, "/news"], [n.title]])}
-        <span class="badge-cat">${esc(n.category)}</span>
+        ${crumbs([["Home", "/"], ["Blog", "/news"], [TG_INFO.catLabel(n.category), `/news?cat=${encodeURIComponent(n.category || "")}`], [n.title]])}
+        <span class="badge-cat">${esc(TG_INFO.catLabel(n.category))}</span>
         <h1>${esc(n.title)}</h1>
         <div class="byline">
           <span class="chip">${initials(au.name)}</span>
@@ -334,6 +334,7 @@ TG.pages = (function () {
       </article>
       ${rel.length ? `<section class="wrap section" style="padding-top:0"><div class="section-head"><h2>Related articles</h2></div><div class="grid cols-3">${rel.map(newsCard).join("")}</div></section>` : ""}`;
     renderComments(n.id);
+    U.pageEnter();
     U.observeReveals(app);
   }
 

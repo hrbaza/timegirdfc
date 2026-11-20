@@ -177,12 +177,21 @@
   // (about what Google shows); longer headlines go without the brand suffix.
   const SITE = "Time Grid FC";
   function pageTitle(title) {
-    if (!title) return `${SITE} — Football News, Analysis & Videos`;
+    if (!title) return `${SITE} — Football Blog, Analysis & Videos`;
     const full = `${title} — ${SITE}`;
     return full.length <= 60 ? full : title;
   }
 
-  const api = { PAGES, EMAIL, UPDATED, AUTHOR, authorOf, pageTitle };
+  // Display names for article categories. The stored category stays as it is
+  // (filters and data use it); readers see these blog-style labels.
+  const CAT_LABELS = {
+    "General Football News": "Football Stories",
+    "Transfer News": "Transfer Talk",
+    "World Cup News": "World Cup",
+  };
+  const catLabel = (c) => CAT_LABELS[c] || c || "";
+
+  const api = { PAGES, EMAIL, UPDATED, AUTHOR, authorOf, pageTitle, catLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TG_INFO = api;
 })(typeof window !== "undefined" ? window : this);

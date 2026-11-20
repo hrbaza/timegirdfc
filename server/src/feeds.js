@@ -65,7 +65,7 @@ async function buildRss() {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>${SITE} — Football News &amp; Analysis</title>
+    <title>${SITE} — Football Blog &amp; Analysis</title>
     <link>${BASE}/</link>
     <atom:link href="${BASE}/rss.xml" rel="self" type="application/rss+xml" />
     <description>Football news, match previews, reports and analysis from ${SITE}.</description>

@@ -70,7 +70,7 @@ const NOINDEX_PAGES = new Set(["signin", "signup", "forgot", "account"]);
 
 /* ---- static meta for list / info pages ---- */
 const SIMPLE = {
-  news: ["Football News & Analysis", "The latest football news, transfer stories, match previews, reports and tactical analysis from Time Grid FC."],
+  news: ["Football Blog: Stories & Analysis", "Football stories, transfer talk, match previews, reports and tactical analysis from the Time Grid FC blog."],
   worldcup: ["World Cup History: Every Winner & Host", "Every FIFA World Cup, men's and women's: hosts, champions, runners-up and the all-time winners table."],
   videos: ["Football Videos & Match Analysis", "Match analysis, player breakdowns and football news videos from the Time Grid FC YouTube channel."],
   about: [INFO.PAGES.about.title, INFO.PAGES.about.desc],
@@ -84,13 +84,13 @@ const SIMPLE = {
 };
 
 /* ---- server-rendered chrome (header + footer) so crawlers see navigation ---- */
-const NAV = [["", "Home"], ["news", "News"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"]];
+const NAV = [["", "Home"], ["news", "Blog"], ["worldcup", "World Cup"], ["videos", "Videos"], ["about", "About"]];
 
 function headerHtml() {
   const links = NAV.map(([r, l]) => `<a href="/${r}" data-route="${r}">${l}</a>`).join("");
   // The ticker strip is here from the start so the page does not jump down
   // when the client fills it with headlines (a layout shift, CLS).
-  return `<div class="ticker" id="tg-ticker"><div class="run"><span>⚽ Welcome to Time Grid FC — football news, analysis &amp; videos</span></div></div>
+  return `<div class="ticker" id="tg-ticker"><div class="run"><span>⚽ Welcome to Time Grid FC — football stories, analysis &amp; videos</span></div></div>
     <nav class="nav"><div class="nav-inner">
       <a href="/" class="brand" aria-label="Time Grid FC home"><img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async"> <span class="brand-txt">Time<b>Grid</b>FC</span></a>
       <div class="nav-links">${links}</div>
@@ -102,10 +102,10 @@ function footerHtml() {
   return `<div class="wrap foot">
       <div>
         <div class="brand" style="margin-bottom:.6rem"><img class="logo" src="/assets/img/logo-96.webp" srcset="/assets/img/logo-96.webp 1x, /assets/img/logo-192.webp 2x" width="44" height="44" alt="" decoding="async"> <span class="brand-txt">Time<b>Grid</b>FC</span></div>
-        <p class="muted" style="max-width:34ch">Football news, match analysis &amp; videos — the official companion to the Time Grid FC YouTube channel.</p>
+        <p class="muted" style="max-width:34ch">Football stories, match analysis &amp; videos — the blog of the Time Grid FC YouTube channel.</p>
         <a class="btn gold sm" href="https://www.youtube.com/@timegrid_fc" target="_blank" rel="noopener">▶ Subscribe on YouTube</a>
       </div>
-      ${col("Explore", [["/news", "News"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
+      ${col("Explore", [["/news", "Blog"], ["/worldcup", "World Cup"], ["/videos", "Videos"]])}
       ${col("Company", [["/about", "About Us"], ["/contact", "Contact"], ["/privacy", "Privacy Policy"], ["/terms", "Terms &amp; Disclaimer"]])}
     </div>
     <div class="wrap foot-bottom">
@@ -127,7 +127,7 @@ function coverImg(n, kind, eager) {
 }
 function newsCardHtml(n, map) {
   return `<a class="card" href="${newsUrl(n._id || n.id, map)}">
-      <div class="thumb">${coverImg(n, "card")}<span class="tag chip">${esc(n.category || "")}</span></div>
+      <div class="thumb">${coverImg(n, "card")}<span class="tag chip">${esc(INFO.catLabel(n.category))}</span></div>
       <div class="pad"><h3>${esc(n.title)}</h3>
         <p class="muted" style="font-size:.9rem;margin:0">${esc(cardSummary(n))}</p>
         <div class="meta">${esc(INFO.authorOf(n).name)} · ${fmtDateShort(n.publishedAt)}</div></div></a>`;
@@ -154,18 +154,18 @@ function homeContent(news, map) {
   // from this HTML instead of waiting for the app's data.
   const featHtml = feat ? `<div><a class="hero-card" href="${newsUrl(feat._id || feat.id, map)}">
         <div class="cover">${coverImg(feat, "feature", true)}<span class="hero-badge">Featured</span></div>
-        <div class="body"><span class="chip">${esc(feat.category || "")}</span>
+        <div class="body"><span class="chip">${esc(INFO.catLabel(feat.category))}</span>
           <h3 style="margin:.5rem 0 .3rem;font-size:1.3rem">${esc(feat.title)}</h3>
           <p class="muted" style="margin:0;font-size:.92rem">${esc(feat.excerpt || "")}</p></div>
       </a><div class="hero-blur"></div></div>` : "";
   return `<section class="hero wrap"><div class="hero-grid"><div>
       <span class="eyebrow">Time Grid FC · Football Hub</span>
-      <h1>Where football <span class="hl">lives</span>.<br>Football news &amp; analysis.</h1>
+      <h1>Where football <span class="hl">lives</span>.<br>Football stories &amp; analysis.</h1>
       <p class="lead">Daily football news and analysis, World Cup history — and every video from the Time Grid FC channel.</p>
       <div class="hero-cta"><a class="btn" href="/news">Read the latest</a> <a class="btn ghost" href="/videos">Watch videos</a></div>
     </div>${featHtml}</div></section>
     <section class="wrap section" style="padding-top:0">
-      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h2>Latest News</h2></div><a class="btn ghost sm" href="/news">All news</a></div>
+      <div class="section-head"><div><span class="eyebrow">The Blog</span><h2>Latest Stories</h2></div><a class="btn ghost sm" href="/news">All stories</a></div>
       <div class="grid cols-3">${cards}</div>
     </section>`;
 }
@@ -183,7 +183,7 @@ function newsListContent(rows, page, total, map) {
       </nav>`;
   }
   return `<section class="wrap section">
-      <div class="section-head"><div><span class="eyebrow">News &amp; Blog</span><h1>Latest Football News</h1><p class="muted" style="margin:0">Daily football news, match analysis and features${pages > 1 ? ` · page ${page} of ${pages}` : ""}.</p></div></div>
+      <div class="section-head"><div><span class="eyebrow">The Blog</span><h1>Football Stories &amp; Analysis</h1><p class="muted" style="margin:0">Football stories, transfer talk, match analysis and features${pages > 1 ? ` · page ${page} of ${pages}` : ""}.</p></div></div>
       <div class="grid cols-3">${cards}</div>${pager}
     </section>`;
 }
@@ -274,7 +274,7 @@ async function buildMeta(seg, page) {
     if (r === "news") {                                                          // /news list (paginated)
       const pg = Math.max(1, parseInt(page, 10) || 1);
       const { rows, total } = await fetchNewsPage(pg);
-      if (pg > 1) M.title = `Football News — page ${pg}`;
+      if (pg > 1) M.title = `Football Blog — page ${pg}`;
       if (pg > 1 && !rows.length && total) {                                     // past the last page: a real 404, not an empty list
         M.httpStatus = 404; M.title = "Page Not Found"; M.desc = "This page of articles does not exist.";
         M.content = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>This page of articles does not exist.</p><p class="help"><a href="/news">← Back to the latest articles</a></p></div></section>`;
@@ -377,7 +377,7 @@ function articleMeta(n, map, related) {
     "author": authorLd(n),
     "publisher": { "@type": "Organization", "name": SITE, "url": CANONICAL_BASE + "/", "logo": { "@type": "ImageObject", "url": CANONICAL_BASE + "/assets/img/logo-512.webp", "width": 512, "height": 512 } },
     "mainEntityOfPage": { "@type": "WebPage", "@id": pageUrl },
-    "articleSection": n.category,
+    "articleSection": INFO.catLabel(n.category),
     "keywords": M.keywords,
     "inLanguage": "en",
   }, {
@@ -385,7 +385,7 @@ function articleMeta(n, map, related) {
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": CANONICAL_BASE + "/" },
-      { "@type": "ListItem", "position": 2, "name": "News", "item": CANONICAL_BASE + "/news" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": CANONICAL_BASE + "/news" },
       { "@type": "ListItem", "position": 3, "name": n.title, "item": pageUrl },
     ],
   }];
@@ -404,8 +404,8 @@ function articleContent(n, coverUrl, map, related) {
     ? `<section class="wrap section" style="padding-top:0"><div class="section-head"><h2>Related articles</h2></div><div class="grid cols-3">${related.map((r) => newsCardHtml(r, map)).join("")}</div></section>`
     : "";
   return `<article class="wrap section article">
-      <nav class="muted" aria-label="Breadcrumb" style="font-size:.85rem;margin-bottom:.6rem"><a href="/">Home</a> › <a href="/news">News</a></nav>
-      <span class="badge-cat">${esc(n.category || "")}</span>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/news">Blog</a><span>›</span><a href="/news?cat=${encodeURIComponent(n.category || "")}">${esc(INFO.catLabel(n.category))}</a></nav>
+      <span class="badge-cat">${esc(INFO.catLabel(n.category))}</span>
       <h1>${esc(n.title)}</h1>
       <div class="byline"><span>By ${bylineHtml(n)}</span> · <span>${esc(dateStr)}</span></div>
       <div class="tag-row">${tags}</div>

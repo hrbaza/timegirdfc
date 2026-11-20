@@ -71,8 +71,11 @@
   }
 
   /* ---- Public site router (index.html) ---- */
+  let routeCount = 0;
   function routePublic() {
     const app = document.getElementById("tg-app");
+    if (++routeCount > 1) U.markNavigated(); // later routes animate; the first one is the server page
+    U.routeStart();
     const { seg, params } = parseRoute();
     const r = seg[0] || "";
     const id = seg[1] || "";
@@ -102,6 +105,7 @@
       console.error("Route error:", e);
       app.innerHTML = `<section class="wrap section"><div class="empty"><div class="ball">⚽</div><p>Something went wrong rendering this page.</p><p class="help">${U.esc(e.message)}</p></div></section>`;
     }
+    U.pageEnter();
     if (app.focus) app.focus({ preventScroll: true });
   }
 
